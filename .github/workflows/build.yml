@@ -1,0 +1,100 @@
+# Builds KFUPM Sorter for Windows and macOS.
+# Runs on every push to main, and is also called by release.yml.
+#   Windows: KFUPM-Sorter-Windows-Setup.exe       (Java bundled, per-user install)
+#   macOS:   KFUPM-Sorter-macOS-AppleSilicon.dmg and KFUPM-Sorter-macOS-Intel.dmg
+name: Build
+
+on:
+  push:
+    branches: [main]
+    paths-ignore: ['**.md', 'docs/**', 'LICENSE']
+  workflow_dispatch:
+  workflow_call:
+
+permissions:
+  contents: read
+
+jobs:
+  test:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-java@v4
+        with:
+          distribution: temurin
+          java-version: '21'
+      - name: Compile and run the self-test
+        run: bash build.sh
+
+  windows:
+    needs: test
+    runs-on: windows-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-java@v4
+        with:
+          distribution: temurin
+          java-version: '21'
+      - name: Compile and package (jpackage app image)
+        shell: pwsh
+        run: |
+          $version = (Select-String -Path build.sh -Pattern '^VERSION=(.+)$').Matches[0].Groups[1].Value
+          New-Item -ItemType Directory -Force build/classes, build/jar | Out-Null
+          $src = Get-ChildItem -Recurse src/main/java -Filter *.java | ForEach-Object { $_.FullName }
+          javac -encoding UTF-8 -d build/classes @src
+          if ($LASTEXITCODE) { exit 1 }
+          Copy-Item -Recurse src/main/resources/* build/classes/
+          jar --create --file build/jar/kfupm-sorter-desktop.jar --main-class io.github.kal429.kfupmsorter.Main -C build/classes .
+          jpackage --type app-image --name "KFUPM Sorter Desktop" --input build/jar --main-jar kfupm-sorter-desktop.jar `
+                   --app-version $version --vendor "KFUPM Sorter (student project)" --icon packaging/app.ico `
+                   --add-modules java.base,java.desktop,java.net.http `
+                   --jlink-options "--strip-debug --no-header-files --no-man-pages --compress=zip-6" `
+                   --dest build/image
+          if ($LASTEXITCODE) { exit 1 }
+          Get-ChildItem "build/image/KFUPM Sorter Desktop"
+      - name: Quick check - the packaged app runs
+        shell: pwsh
+        run: |
+          $exe = "build/image/KFUPM Sorter Desktop/KFUPM Sorter Desktop.exe"
+          $p = Start-Process -FilePath $exe -ArgumentList '--preview' -Wait -PassThru -NoNewWindow
+          Write-Host "preview exit code: $($p.ExitCode)"
+          if ($p.ExitCode -ne 0) { exit 1 }
+      - name: Install Inno Setup if missing
+        shell: pwsh
+        run: |
+          $iscc = "${env:ProgramFiles(x86)}\Inno Setup 6\ISCC.exe"
+          if (-not (Test-Path $iscc)) { choco install innosetup -y --no-progress }
+      - name: Build the installer
+        shell: pwsh
+        run: '& "${env:ProgramFiles(x86)}\Inno Setup 6\ISCC.exe" packaging\windows.iss'
+      - uses: actions/upload-artifact@v4
+        with:
+          name: windows
+          path: build/installer/KFUPM-Sorter-Windows-Setup.exe
+
+  mac:
+    needs: test
+    strategy:
+      fail-fast: false
+      matrix:
+        include:
+          - runner: macos-15
+            arch: AppleSilicon
+          - runner: macos-15-intel
+            arch: Intel
+    runs-on: ${{ matrix.runner }}
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-java@v4
+        with:
+          distribution: temurin
+          java-version: '21'
+      - name: Compile, test and make the .dmg
+        run: |
+          bash build.sh package
+          mv build/installer/*.dmg "build/installer/KFUPM-Sorter-macOS-${{ matrix.arch }}.dmg"
+          ls -la build/installer
+      - uses: actions/upload-artifact@v4
+        with:
+          name: mac-${{ matrix.arch }}
+          path: build/installer/KFUPM-Sorter-macOS-${{ matrix.arch }}.dmg

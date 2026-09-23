@@ -1,0 +1,13 @@
+# build output
+build/
+*.class
+
+# personal settings never belong in the repo
+rules.json
+settings.json
+sorter.log
+lastrun.txt
+*.tmp
+Thumbs.db
+desktop.ini
+.DS_Store

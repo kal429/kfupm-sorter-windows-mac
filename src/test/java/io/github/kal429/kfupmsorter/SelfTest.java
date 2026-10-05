@@ -176,6 +176,21 @@ public final class SelfTest {
         Engine.runSaved(false);
         check("unticked type is not sorted", !Files.exists(dl.resolve("Documents/notes.pdf")) && Files.exists(dl.resolve("Other/notes.pdf")));
 
+        // ---- 1.1: a filter added later can pick up files already sorted by type
+        Files.createDirectories(dl.resolve("Documents"));
+        file(dl.resolve("Documents"), "ARCh2027_Silicon_Battery_Proposal.pdf", true);
+        file(dl.resolve("Documents"), "research_paper.pdf", true);
+        Settings f2 = Settings.load();
+        f2.filters.add(new Settings.Filter("ARCH", List.of("ARCh2027", "ARCH"), true));
+        f2.save();
+        Engine eng = new Engine(f2.toRules());
+        List<Engine.Resort> rs = eng.findResorts(null);
+        check("finds the old file for the new filter (" + rs.size() + ")", rs.size() == 1
+                && rs.get(0).file.equals("ARCh2027_Silicon_Battery_Proposal.pdf") && rs.get(0).from.equals("Documents") && rs.get(0).to.equals("ARCH"));
+        check("only the asked folders", eng.findResorts(java.util.Set.of("Internship")).isEmpty());
+        check("moves it", eng.applyResorts(rs) == 1 && Files.exists(dl.resolve("ARCH/ARCh2027_Silicon_Battery_Proposal.pdf"))
+                && Files.exists(dl.resolve("Documents/research_paper.pdf")));
+
         // ---- autostart file contents (written into a temp home)
         System.out.println();
         System.out.println(passes + " passed, " + fails + " failed");

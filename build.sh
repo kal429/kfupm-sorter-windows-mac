@@ -10,7 +10,7 @@
 set -euo pipefail
 cd "$(dirname "$0")"
 
-VERSION=1.1.0
+VERSION=1.1.1
 NAME="KFUPM Sorter Desktop"
 MODULES=java.base,java.desktop,java.net.http
 SEP=":"

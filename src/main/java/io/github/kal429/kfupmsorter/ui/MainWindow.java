@@ -142,6 +142,8 @@ public final class MainWindow extends JFrame {
     private Theme.KButton updateBtn, saveBtn;
 
     private boolean busy = false;   // true while lists are being refilled
+    // filter and course folders as last saved, to spot new ones
+    private final Set<String> savedNameFolders = new HashSet<>();
 
     public MainWindow() {
         super("KFUPM Sorter");
@@ -528,10 +530,14 @@ public final class MainWindow extends JFrame {
         list.add(scroll(filterList), BorderLayout.CENTER);
         JPanel side = new JPanel(new BorderLayout());
         side.setOpaque(false);
-        side.add(button("btn.remove", false, () -> {
+        JPanel sideBtns = new JPanel(new GridLayout(0, 1, 0, 6));
+        sideBtns.setOpaque(false);
+        sideBtns.add(button("btn.remove", false, () -> {
             int i = filterList.getSelectedIndex();
             if (i >= 0 && i < settings.filters.size()) { settings.filters.remove(i); refreshFilters(); }
-        }), BorderLayout.NORTH);
+        }));
+        sideBtns.add(button("cust.apply", false, this::applyToSorted));
+        side.add(sideBtns, BorderLayout.NORTH);
         list.add(side, BorderLayout.LINE_END);
         p.add(list, BorderLayout.CENTER);
         return p;
@@ -1028,6 +1034,40 @@ public final class MainWindow extends JFrame {
             if (imported != null) { settings = imported; footerKey = "foot.imported"; }
             else { settings = new Settings(); footerKey = "foot.first"; }
         }
+        savedNameFolders.addAll(nameFolders());
+    }
+
+    /** Folders of the custom filters and courses. */
+    private Set<String> nameFolders() {
+        Set<String> out = new HashSet<>();
+        for (Settings.Filter f : settings.filters) out.add(f.folder);
+        for (String c : settings.courses) out.add(settings.courseFolder(c));
+        return out;
+    }
+
+    /**
+     * Files sorted by type before a filter or course existed (e.g. in Documents) are offered
+     * a move to that filter's or course's folder. only = some folders, or null for all.
+     */
+    private void offerResorts(Set<String> only, boolean tellIfNone) {
+        Engine e = new Engine(settings.toRules());
+        List<Engine.Resort> list = e.findResorts(only);
+        if (list.isEmpty()) { if (tellIfNone) info(t("resort.none")); return; }
+        StringBuilder b = new StringBuilder(Strings.fmt(t("ask.resort"), list.size())).append("\n\n");
+        for (int i = 0; i < Math.min(8, list.size()); i++) {
+            Engine.Resort r = list.get(i);
+            b.append("\u200E").append(r.from).append(" / ").append(r.file).append("   ->   ").append(r.to).append("\n");
+        }
+        if (list.size() > 8) b.append(Strings.fmt(t("resort.more"), list.size() - 8));
+        if (!ask(b.toString())) return;
+        int n = e.applyResorts(list);
+        setFooter("foot.resorted", n);
+        refreshStatus();
+    }
+
+    private void applyToSorted() {
+        if (!save(false)) return;
+        offerResorts(null, true);
     }
 
     private void applySettingsToForm() {
@@ -1077,6 +1117,11 @@ public final class MainWindow extends JFrame {
             return false;
         }
         setFooter("foot.saved", now());
+        Set<String> added = nameFolders();
+        added.removeAll(savedNameFolders);
+        savedNameFolders.clear();
+        savedNameFolders.addAll(nameFolders());
+        if (interactive && !added.isEmpty()) offerResorts(added, false);
         if (interactive && !(prefs.auto && Autostart.isEnabled())) {
             if (ask(t("ask.enable"))) enableAuto();
         }

@@ -55,6 +55,7 @@ public final class Engine {
     private final Set<String> ignoreNames = new HashSet<>();
     private final long minAgeMillis;
     private final boolean keepUserMoves;
+    private final List<Object> allTypeFolders = new ArrayList<>();
 
     public Engine(Map<String, Object> rules) {
         root = Paths.get(Json.str(rules.get("watchFolder"), AppDirs.defaultWatchFolder().toString()));
@@ -74,6 +75,8 @@ public final class Engine {
         for (Object o : Json.arr(rules.get("ignoreNames"))) ignoreNames.add(String.valueOf(o).toLowerCase(Locale.ROOT));
         minAgeMillis = 1000L * Json.num(rules.get("minAgeSeconds"), 20);
         keepUserMoves = Json.bool(rules.get("keepUserMoves"), true);
+        for (Object o : Json.arr(rules.get("typeDefs"))) allTypeFolders.add(Json.str(Json.obj(o).get("name"), "Other"));
+        if (allTypeFolders.isEmpty()) for (TypeGroup g : TypeGroup.ALL) allTypeFolders.add(g.name);
     }
 
     private void addNameRules(Object list) {
@@ -207,6 +210,72 @@ public final class Engine {
             }
         }
         if (memory != null && !dryRun) memory.saveIfChanged();
+    }
+
+    // ------------------------------------------------------------ files sorted before a filter existed
+
+    /** A file sitting in a file-type folder (Documents, Images...) that a filter or course now claims. */
+    public static final class Resort {
+        public final String file, from, to;
+        Resort(String file, String from, String to) { this.file = file; this.from = from; this.to = to; }
+    }
+
+    /** Filter or course folder a name belongs to (ignores file types), or null. */
+    String nameDestination(String fileName) {
+        for (Rule r : nameRules) if (r.pattern.matcher(fileName).find()) return r.folder;
+        return null;
+    }
+
+    /**
+     * Files already sorted into a file-type folder or "Other" that match a custom filter or course.
+     * onlyFolders limits it to some filter / course folders (null = all of them).
+     */
+    public List<Resort> findResorts(Set<String> onlyFolders) {
+        List<Resort> out = new ArrayList<>();
+        Set<String> typeFolders = new java.util.LinkedHashSet<>();
+        for (String[] row : typeRules) typeFolders.add(row[0]);
+        for (Object o : allTypeFolders) typeFolders.add(String.valueOf(o));
+        if (otherFolder != null) typeFolders.add(otherFolder);
+        typeFolders.add("Other");
+        for (String folder : typeFolders) {
+            Path dir = root.resolve(folder);
+            if (!Files.isDirectory(dir, LinkOption.NOFOLLOW_LINKS)) continue;
+            List<Path> files = new ArrayList<>();
+            try (DirectoryStream<Path> ds = Files.newDirectoryStream(dir)) {
+                for (Path p : ds) files.add(p);
+            } catch (IOException e) {
+                continue;
+            }
+            files.sort(null);
+            for (Path p : files) {
+                String name = p.getFileName().toString();
+                if (!Files.isRegularFile(p, LinkOption.NOFOLLOW_LINKS) || name.startsWith(".") || name.startsWith("~$")) continue;
+                String to = nameDestination(name);
+                if (to == null || to.equalsIgnoreCase(folder)) continue;
+                if (onlyFolders != null && !onlyFolders.contains(to)) continue;
+                out.add(new Resort(name, folder, to));
+            }
+        }
+        return out;
+    }
+
+    /** Moves them (never overwriting). Returns how many moved. */
+    public int applyResorts(List<Resort> list) {
+        int n = 0;
+        for (Resort r : list) {
+            Path src = root.resolve(r.from).resolve(r.file);
+            Path dir = root;
+            for (String part : r.to.split("[\\\\/]")) if (!part.isEmpty()) dir = dir.resolve(part);
+            try {
+                Files.createDirectories(dir);
+                Files.move(src, uniqueTarget(dir, r.file));
+                SortLog.note("MOVED   " + r.from + "/" + r.file + "  ->  " + r.to);
+                n++;
+            } catch (IOException e) {
+                SortLog.note("FAILED  " + r.from + "/" + r.file + "  ->  " + r.to + "  (" + e.getMessage() + ")");
+            }
+        }
+        return n;
     }
 
     private static void writeHeartbeat(int moved) {

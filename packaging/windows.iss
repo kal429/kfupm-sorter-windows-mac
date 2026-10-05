@@ -4,7 +4,7 @@
 
 #define AppName      "KFUPM Sorter Desktop"
 #define AppExe       "KFUPM Sorter Desktop.exe"
-#define AppVersion   "1.1.0"
+#define AppVersion   "1.1.1"
 #define AppPublisher "KFUPM Sorter (student project)"
 #define AppURL       "https://github.com/kal429/kfupm-sorter-windows-mac"
 

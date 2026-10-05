@@ -140,6 +140,11 @@ public final class Strings {
         m.put("chk.keepMoves", "Don't move back files I moved myself");
         m.put("keep.help", "If you put a sorted file back in this folder, it stays there. New downloads are still sorted.");
         m.put("btn.forget", "Forget them");
+        m.put("cust.apply", "Apply to sorted files");
+        m.put("resort.none", "No file in Documents, Images or the other file-type folders matches your filters or courses.");
+        m.put("ask.resort", "{0} file(s) were sorted by type before this filter or course existed, and now match it. Move them to the right folder?");
+        m.put("resort.more", "... and {0} more");
+        m.put("foot.resorted", "Moved {0} file(s) to their filter or course folders.");
         m.put("foot.forgot", "Forgot {0} remembered files. Files you moved back will be sorted again.");
         m.put("warn.folder", "The folder to sort does not exist.");
         m.put("warn.nothing", "Pick at least one course, add a custom filter, or turn on sorting by file type.");
@@ -274,6 +279,11 @@ public final class Strings {
         m.put("chk.keepMoves", "لا تُعِد ترتيب ملف نقلتُه بنفسي");
         m.put("keep.help", "إذا أعدت ملفًا مرتبًا إلى هذا المجلد يبقى في مكانه، وتُرتَّب التنزيلات الجديدة كالمعتاد.");
         m.put("btn.forget", "انسَ هذه الملفات");
+        m.put("cust.apply", "طبّقها على الملفات المرتبة");
+        m.put("resort.none", "لا يوجد في مجلدات المستندات والصور وبقية مجلدات الأنواع ملف يطابق فلاترك أو مقرراتك.");
+        m.put("ask.resort", "رُتِّب {0} ملفًا حسب النوع قبل إضافة هذا الفلتر أو المقرر، وهي تطابقه الآن. هل تنقلها إلى مجلدها الصحيح؟");
+        m.put("resort.more", "... و{0} ملفًا آخر");
+        m.put("foot.resorted", "نُقل {0} ملفًا إلى مجلدات الفلاتر والمقررات.");
         m.put("foot.forgot", "نُسي {0} ملفًا، وستُرتَّب الملفات التي أعدتها من جديد.");
         m.put("warn.folder", "المجلد المحدد غير موجود.");
         m.put("warn.nothing", "اختر مقررًا واحدًا على الأقل، أو أضف فلترًا مخصصًا، أو فعّل الفرز حسب نوع الملف.");

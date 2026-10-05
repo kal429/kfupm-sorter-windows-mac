@@ -29,14 +29,57 @@ public final class Settings {
         }
     }
 
+    /** A folder for one kind of file, such as Documents (.pdf .docx) or Assembly (.asm .s). */
+    public static final class TypeDef {
+        public String name;
+        public List<String> extensions;      // without the dot, lower case: "pdf", "asm"
+        public boolean on;
+
+        public TypeDef(String name, List<String> extensions, boolean on) {
+            this.name = name;
+            this.extensions = new ArrayList<>(extensions);
+            this.on = on;
+        }
+
+        public TypeDef copy() { return new TypeDef(name, extensions, on); }
+    }
+
+    /** The original list (Documents, Images, Videos...). */
+    public static List<TypeDef> defaultTypes() {
+        List<TypeDef> out = new ArrayList<>();
+        for (TypeGroup g : TypeGroup.ALL) out.add(new TypeDef(g.name, g.extensions, g.onByDefault));
+        return out;
+    }
+
+    /** ".asm, *.S ; inc" becomes [asm, s, inc]. Returns null if one of them is not a valid extension. */
+    public static List<String> parseExtensions(String text) {
+        List<String> out = new ArrayList<>();
+        for (String part : text.split("[,،;\\s]+")) {
+            String e = part.trim().toLowerCase(java.util.Locale.ROOT).replaceAll("^\\*?\\.+", "");
+            if (e.isEmpty()) continue;
+            if (!e.matches("[\\p{L}\\p{N}_+\\-~!]{1,20}")) return null;
+            if (!out.contains(e)) out.add(e);
+        }
+        return out;
+    }
+
     public String watchFolder = AppDirs.defaultWatchFolder().toString();
     public String term = "";
     public boolean termFolder = false;
     public List<String> courses = new ArrayList<>();          // codes such as "COE 301"
     public List<Filter> filters = new ArrayList<>();
     public boolean sortByType = true;
-    public List<String> typeGroups = new ArrayList<>(TypeGroup.defaults());
+    public List<TypeDef> types = defaultTypes();
     public boolean otherFolder = false;
+    /** Files the user moved back into the watched folder are left where they are. */
+    public boolean keepUserMoves = true;
+
+    /** Names of the ticked types (what older versions saved as "typeGroups"). */
+    public List<String> typeGroups() {
+        List<String> out = new ArrayList<>();
+        for (TypeDef t : types) if (t.on) out.add(t.name);
+        return out;
+    }
 
     // ------------------------------------------------------------ patterns
 
@@ -116,19 +159,29 @@ public final class Settings {
 
         List<Object> typeRules = new ArrayList<>();
         if (sortByType) {
-            for (TypeGroup g : TypeGroup.ALL) {
-                if (!typeGroups.contains(g.name)) continue;
+            for (TypeDef t : types) {
+                if (!t.on || t.extensions.isEmpty()) continue;
                 Map<String, Object> m = new LinkedHashMap<>();
-                m.put("folder", g.name);
+                m.put("folder", t.name);
                 List<Object> ex = new ArrayList<>();
-                for (String e : g.extensions) ex.add("." + e);
+                for (String e : t.extensions) ex.add("." + e);
                 m.put("extensions", ex);
                 typeRules.add(m);
             }
         }
         r.put("typeRules", typeRules);
-        // not used by the engine: keeps the ticked type groups even while sorting by type is off
-        r.put("typeGroups", new ArrayList<Object>(typeGroups));
+        r.put("keepUserMoves", keepUserMoves);
+        // not used by the engine: the full, editable list of types (also the ones that are off)
+        List<Object> defs = new ArrayList<>();
+        for (TypeDef t : types) {
+            Map<String, Object> m = new LinkedHashMap<>();
+            m.put("name", t.name);
+            m.put("extensions", new ArrayList<Object>(t.extensions));
+            m.put("on", t.on);
+            defs.add(m);
+        }
+        r.put("typeDefs", defs);
+        r.put("typeGroups", new ArrayList<Object>(typeGroups()));
         return r;
     }
 
@@ -155,13 +208,28 @@ public final class Settings {
             for (Object k : Json.arr(m.get("keywords"))) kw.add(String.valueOf(k));
             if (!folder.isEmpty() && !kw.isEmpty()) s.filters.add(new Filter(folder, kw, Json.bool(m.get("wholeWord"), true)));
         }
-        List<String> groups = new ArrayList<>();
-        if (r.containsKey("typeGroups")) {
-            for (Object o : Json.arr(r.get("typeGroups"))) groups.add(String.valueOf(o));
+        s.keepUserMoves = Json.bool(r.get("keepUserMoves"), true);
+        if (r.containsKey("typeDefs")) {
+            s.types = new ArrayList<>();
+            for (Object o : Json.arr(r.get("typeDefs"))) {
+                Map<String, Object> m = Json.obj(o);
+                String name = Json.str(m.get("name"), "");
+                List<String> ex = new ArrayList<>();
+                for (Object e : Json.arr(m.get("extensions"))) ex.add(String.valueOf(e).replaceAll("^\\.+", "").toLowerCase(java.util.Locale.ROOT));
+                if (!name.isEmpty()) s.types.add(new TypeDef(name, ex, Json.bool(m.get("on"), true)));
+            }
         } else {
-            for (Object o : Json.arr(r.get("typeRules"))) groups.add(Json.str(Json.obj(o).get("folder"), ""));
+            // settings from version 1.0 (or the PowerShell edition): the original list, ticked as saved
+            List<String> groups = new ArrayList<>();
+            if (r.containsKey("typeGroups")) {
+                for (Object o : Json.arr(r.get("typeGroups"))) groups.add(String.valueOf(o));
+            } else {
+                for (Object o : Json.arr(r.get("typeRules"))) groups.add(Json.str(Json.obj(o).get("folder"), ""));
+            }
+            if (!groups.isEmpty() || r.containsKey("typeRules")) {
+                for (TypeDef t : s.types) t.on = groups.contains(t.name);
+            }
         }
-        if (!groups.isEmpty() || r.containsKey("typeRules")) s.typeGroups = groups;
         return s;
     }
 

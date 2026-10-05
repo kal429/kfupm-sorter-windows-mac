@@ -36,6 +36,8 @@ Downloads/
 - **Custom filters**: your own folder with a few keywords, for an internship, a club or a side project. Custom filters are checked before courses.
 - **Smart matching**: `COE 301` catches `COE301_Lab.pdf` and `Coe-301 HW.docx`, but not `COE 3011`.
 - **Automatic sorting**: a small background sorter checks your Downloads folder every minute and starts when you sign in. It has an icon in the system tray (Windows) or menu bar (Mac) with *Open*, *Sort now* and *Stop*. No administrator rights needed.
+- **Your own file types**: change the extensions of any type folder, or add your own by typing, e.g. a folder `Assembly` for `.asm, .s, .inc`. An extension belongs to one folder only.
+- **Respects your own moves**: if you take a sorted file and put it back in Downloads, it stays there. New downloads are still sorted. (Can be turned off; *Forget them* lets the sorter sort those files again.)
 - **English or Arabic** interface (right-to-left in Arabic), KFUPM green and gold.
 
 ## Safety
@@ -65,6 +67,7 @@ Requirements: macOS 12 or later, or Windows 10 / 11. Nothing else to install.
 |---|---|
 | `Main.java` | Starts the window, or the background sorter with `--background` |
 | `Engine.java` | The sorting rules: custom filters, then courses, then file types. Safe moves only |
+| `MovedMemory.java` | Remembers what was sorted (name, size, time) so files you move back are left alone |
 | `Settings.java` | Your choices, saved as `rules.json` (same format as the PowerShell edition) |
 | `Catalog.java` | The bundled course list, and the update from bulletin.kfupm.edu.sa |
 | `Background.java` | Sorts every minute; tray / menu-bar icon |
@@ -72,7 +75,7 @@ Requirements: macOS 12 or later, or Windows 10 / 11. Nothing else to install.
 | `Strings.java` | English and Arabic text |
 | `ui/MainWindow.java`, `ui/Theme.java` | The window (Swing) and the KFUPM colors |
 | `Json.java` | A tiny JSON reader and writer, so there are no libraries at all |
-| `src/test/.../SelfTest.java` | 31 checks of the rules and the engine |
+| `src/test/.../SelfTest.java` | 42 checks of the rules and the engine |
 | `packaging/` | Icons and the Inno Setup script for the Windows installer |
 
 Settings live in `%APPDATA%\KFUPM Sorter Desktop` on Windows and `~/Library/Application Support/KFUPM Sorter Desktop` on Mac.
@@ -87,7 +90,7 @@ You only need a JDK, version 21 or newer ([Temurin](https://adoptium.net) is fre
 ./build.sh package  # ... and make the Mac .dmg (on a Mac) with jpackage
 ```
 
-On Windows, run it from Git Bash, or let GitHub build everything: every push runs [`build.yml`](.github/workflows/build.yml), and pushing a tag such as `v1.0.1` runs [`release.yml`](.github/workflows/release.yml), which attaches the installers to a new release.
+On Windows, double-click `Build Windows installer.bat` (uses an installed JDK 21+, or downloads Temurin once, then runs Inno Setup), or run `build.sh` from Git Bash, or let GitHub build everything: every push runs [`build.yml`](.github/workflows/build.yml), and pushing a tag such as `v1.0.1` runs [`release.yml`](.github/workflows/release.yml), which attaches the installers to a new release.
 
 ---
 
@@ -103,6 +106,8 @@ On Windows, run it from Git Bash, or let GitHub build everything: every push run
 - **ترتيب تلقائي**: يفحص مجلد التنزيلات كل دقيقة ويبدأ عند تسجيل الدخول، مع أيقونة في شريط المهام (Windows) أو شريط القوائم (Mac).
 - واجهة بالعربية والإنجليزية.
 - لا يحذف ولا يستبدل أي ملف، ولا يرسل أي بيانات.
+- **أنواع ملفات خاصة بك**: عدّل امتدادات أي مجلد أو أضف نوعًا جديدًا بالكتابة، مثل مجلد `Assembly` للامتدادات `.asm, .s, .inc`.
+- **يحترم ما تنقله بنفسك**: إذا أعدت ملفًا مرتبًا إلى مجلد التنزيلات يبقى فيه، وتُرتَّب التنزيلات الجديدة كالمعتاد.
 
 **التنزيل:** من [أحدث إصدار](https://github.com/kal429/kfupm-sorter-windows-mac/releases/latest):
 `KFUPM-Sorter-macOS-AppleSilicon.dmg` لأجهزة Mac بمعالج M1 أو أحدث، و`KFUPM-Sorter-macOS-Intel.dmg` لأجهزة Mac بمعالج Intel، و`KFUPM-Sorter-Windows-Setup.exe` لنظام Windows.

@@ -80,7 +80,7 @@ public final class SelfTest {
               + "\"courseRules\":[{\"folder\":\"261\\\\COE 241\",\"patterns\":[\"x\"]}],"
               + "\"typeRules\":[{\"folder\":\"Videos\"}]}")));
         check("imports PowerShell edition", ps.courses.equals(List.of("COE 241")) && ps.termFolder
-                && ps.typeGroups.equals(List.of("Videos")));
+                && ps.typeGroups().equals(List.of("Videos")));
 
         // ---- engine
         file(dl, "Lecture_T261_COE_301_Ch3.pdf", true);
@@ -121,6 +121,60 @@ public final class SelfTest {
         check("log written", SortLog.recentMoves(50).size() == 9);
         check("heartbeat", Files.exists(data.resolve("lastrun.txt")));
         check("second run moves nothing", Engine.runSaved(false).moves.isEmpty());
+
+        // ---- 1.1: files the user moved back stay where they are
+        Path sorted = dl.resolve("Internship/Internship_Offer_Letter.pdf");
+        Files.move(sorted, dl.resolve("Internship_Offer_Letter.pdf"));        // the user takes it back out
+        Path dup = dl.resolve("261/COE 301/Lecture_T261_COE_301_Ch3 (1).pdf");
+        Files.move(dup, dl.resolve("Lecture_T261_COE_301_Ch3 (1).pdf"));       // also under its "(1)" name
+        Engine.Result back1 = Engine.runSaved(false);
+        check("moved-back files are left alone", back1.moves.isEmpty()
+                && Files.exists(dl.resolve("Internship_Offer_Letter.pdf"))
+                && Files.exists(dl.resolve("Lecture_T261_COE_301_Ch3 (1).pdf")));
+        check("moved.json written", Files.exists(data.resolve("moved.json")));
+        // a new download with the same name (new time) is still sorted
+        Files.move(dl.resolve("Internship_Offer_Letter.pdf"), dl.resolve("Internship/Internship_Offer_Letter.pdf"));
+        Path fresh2 = file(dl, "Internship_Offer_Letter.pdf", false);
+        Files.setLastModifiedTime(fresh2, FileTime.fromMillis(System.currentTimeMillis() - 60_000));
+        Engine.runSaved(false);
+        check("new download with the same name is sorted", Files.exists(dl.resolve("Internship/Internship_Offer_Letter (1).pdf")));
+        // option off: sorted again
+        s.keepUserMoves = false;
+        s.save();
+        Engine.runSaved(false);
+        check("option off sorts it again", Files.exists(dl.resolve("261/COE 301/Lecture_T261_COE_301_Ch3 (1).pdf"))
+                && !Files.exists(dl.resolve("Lecture_T261_COE_301_Ch3 (1).pdf")));
+        s.keepUserMoves = true;
+        s.save();
+        check("forget clears the memory", MovedMemory.forget() > 0 && !Files.exists(data.resolve("moved.json")));
+        // first run of 1.1 learns what is already sorted (files sorted by 1.0)
+        Engine.runSaved(false);                                                 // learns
+        Files.move(dl.resolve("Club/IEEEmeeting.pptx"), dl.resolve("IEEEmeeting.pptx"));
+        check("files sorted before the update count too", Engine.runSaved(false).moves.isEmpty()
+                && Files.exists(dl.resolve("IEEEmeeting.pptx")));
+
+        // ---- 1.1: editable file types
+        check("parse extensions", Settings.parseExtensions(".asm, *.S ; inc  .ASM").equals(List.of("asm", "s", "inc"))
+                && Settings.parseExtensions("a/b") == null && Settings.parseExtensions(" ").isEmpty());
+        Settings t = Settings.load();
+        for (Settings.TypeDef td : t.types) td.extensions.remove("asm");
+        t.types.add(new Settings.TypeDef("Assembly", List.of("asm", "s"), true));
+        t.save();
+        Settings t2 = Settings.load();
+        Settings.TypeDef asm = t2.types.get(t2.types.size() - 1);
+        check("custom type saved", asm.name.equals("Assembly") && asm.extensions.equals(List.of("asm", "s")) && asm.on
+                && t2.types.size() == TypeGroup.ALL.size() + 1);
+        file(dl, "lab1.asm", true);
+        file(dl, "boot.S", true);
+        Engine.runSaved(false);
+        check("assembly files go to their own folder", Files.exists(dl.resolve("Assembly/lab1.asm")) && Files.exists(dl.resolve("Assembly/boot.S")));
+        Settings old = Settings.fromRules(Json.obj(Json.parse("{\"typeGroups\":[\"Documents\",\"Code\"],\"typeRules\":[]}")));
+        check("1.0 settings still load", old.typeGroups().equals(List.of("Documents", "Code")) && old.types.size() == TypeGroup.ALL.size());
+        t2.types.get(0).on = false;     // Documents off
+        t2.save();
+        file(dl, "notes.pdf", true);
+        Engine.runSaved(false);
+        check("unticked type is not sorted", !Files.exists(dl.resolve("Documents/notes.pdf")) && Files.exists(dl.resolve("Other/notes.pdf")));
 
         // ---- autostart file contents (written into a temp home)
         System.out.println();

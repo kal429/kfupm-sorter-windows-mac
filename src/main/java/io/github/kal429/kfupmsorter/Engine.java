@@ -54,6 +54,7 @@ public final class Engine {
     private final Set<String> skipExt = new HashSet<>();
     private final Set<String> ignoreNames = new HashSet<>();
     private final long minAgeMillis;
+    private final boolean keepUserMoves;
 
     public Engine(Map<String, Object> rules) {
         root = Paths.get(Json.str(rules.get("watchFolder"), AppDirs.defaultWatchFolder().toString()));
@@ -72,6 +73,7 @@ public final class Engine {
         for (Object o : Json.arr(rules.get("skipExtensions"))) skipExt.add(String.valueOf(o).toLowerCase(Locale.ROOT));
         for (Object o : Json.arr(rules.get("ignoreNames"))) ignoreNames.add(String.valueOf(o).toLowerCase(Locale.ROOT));
         minAgeMillis = 1000L * Json.num(rules.get("minAgeSeconds"), 20);
+        keepUserMoves = Json.bool(rules.get("keepUserMoves"), true);
     }
 
     private void addNameRules(Object list) {
@@ -153,10 +155,26 @@ public final class Engine {
             return;
         }
         files.sort(null);
+        MovedMemory memory = keepUserMoves ? MovedMemory.load() : null;
+        if (memory != null && memory.isFresh() && !dryRun) {
+            // first run with this feature: files sorted earlier count as sorted too
+            Set<String> folders = new java.util.LinkedHashSet<>();
+            for (Rule r : nameRules) folders.add(r.folder);
+            for (String[] row : typeRules) folders.add(row[0]);
+            if (otherFolder != null) folders.add(otherFolder);
+            for (String rel : folders) {
+                Path dir = root;
+                for (String part : rel.split("[\\\\/]")) if (!part.isEmpty()) dir = dir.resolve(part);
+                memory.rememberFolder(dir);
+            }
+        }
         for (Path p : files) {
             String name = p.getFileName().toString();
+            long size, modified;
             try {
                 BasicFileAttributes a = Files.readAttributes(p, BasicFileAttributes.class, LinkOption.NOFOLLOW_LINKS);
+                size = a.size();
+                modified = a.lastModifiedTime().toMillis();
                 if (!a.isRegularFile()) continue;                          // folders, links, app bundles
                 if (name.startsWith(".") || name.startsWith("~$")) continue;  // hidden and Office lock files
                 if (ignoreNames.contains(name.toLowerCase(Locale.ROOT))) continue;
@@ -165,6 +183,8 @@ public final class Engine {
             } catch (IOException e) {
                 continue;
             }
+            // already sorted once and moved back here by the user: leave it where they put it
+            if (memory != null && memory.contains(MovedMemory.key(name, size, modified))) continue;
             String rel = destination(name);
             if (rel == null) continue;
             if (dryRun) { res.moves.add(new Move(name, rel)); continue; }
@@ -174,6 +194,7 @@ public final class Engine {
                 Files.createDirectories(dir);
                 Path target = uniqueTarget(dir, name);
                 Files.move(p, target);                                    // no REPLACE_EXISTING: never overwrite
+                if (memory != null) memory.remember(name, target.getFileName().toString(), size, modified);
                 res.moves.add(new Move(name, rel));
                 SortLog.note("MOVED   " + name + "  ->  " + rel);
             } catch (NoSuchFileException e) {
@@ -185,6 +206,7 @@ public final class Engine {
                 SortLog.note("FAILED  " + name + "  ->  " + rel + "  (" + e.getMessage() + ")");
             }
         }
+        if (memory != null && !dryRun) memory.saveIfChanged();
     }
 
     private static void writeHeartbeat(int moved) {

@@ -9,7 +9,6 @@ import io.github.kal429.kfupmsorter.Prefs;
 import io.github.kal429.kfupmsorter.Settings;
 import io.github.kal429.kfupmsorter.SortLog;
 import io.github.kal429.kfupmsorter.Strings;
-import io.github.kal429.kfupmsorter.TypeGroup;
 
 import javax.swing.BorderFactory;
 import javax.swing.Box;
@@ -119,8 +118,13 @@ public final class MainWindow extends JFrame {
     // sorting
     private final JTextField watchField = new JTextField();
     private final JCheckBox byTypeBox = new JCheckBox();
-    private final List<JCheckBox> typeBoxes = new ArrayList<>();
+    private final DefaultListModel<Settings.TypeDef> typeModel = new DefaultListModel<>();
+    private final JList<Settings.TypeDef> typeList = new JList<>(typeModel);
+    private final JTextField typeName = new JTextField();
+    private final JTextField typeExts = new JTextField();
+    private final List<JComponent> typeEditors = new ArrayList<>();
     private final JCheckBox otherBox = new JCheckBox();
+    private final JCheckBox keepMovesBox = new JCheckBox();
 
     // status
     private final JLabel autoLabel = new JLabel();
@@ -209,6 +213,14 @@ public final class MainWindow extends JFrame {
     private JLabel mutedLabel(String key) {
         JLabel l = Theme.muted("");
         retext.add(() -> l.setText(t(key)));
+        return l;
+    }
+
+    /** A small grey label that wraps onto more lines instead of being cut off. */
+    private JLabel wrappedMuted(String key, int width) {
+        JLabel l = Theme.muted("");
+        retext.add(() -> l.setText("<html><div style='width:" + width + "px'>"
+                + t(key).replace("&", "&amp;").replace("<", "&lt;").replace(">", "&gt;") + "</div></html>"));
         return l;
     }
 
@@ -565,32 +577,87 @@ public final class MainWindow extends JFrame {
         JPanel types = new JPanel();
         types.setOpaque(false);
         types.setLayout(new BoxLayout(types, BoxLayout.Y_AXIS));
-        JLabel h = heading("lbl.unmatched");
-        h.setAlignmentX(Component.LEFT_ALIGNMENT);
-        types.add(h);
-        types.add(Box.createVerticalStrut(6));
-        check(byTypeBox, "chk.byType").setAlignmentX(Component.LEFT_ALIGNMENT);
-        byTypeBox.addActionListener(e -> updateTypeEnabled());
-        types.add(byTypeBox);
-        JPanel grid = new JPanel(new GridLayout(0, 1, 0, 2));
-        grid.setBackground(Color.WHITE);
-        grid.setBorder(BorderFactory.createCompoundBorder(BorderFactory.createLineBorder(Theme.GRAY),
-                BorderFactory.createEmptyBorder(6, 10, 6, 10)));
-        for (TypeGroup tg : TypeGroup.ALL) {
-            JCheckBox b = new JCheckBox();
-            b.setOpaque(false);
-            String sample = String.join(" ", tg.extensions.subList(0, Math.min(4, tg.extensions.size())).stream().map(x -> "." + x).toList());
-            retext.add(() -> b.setText(t("type." + tg.name) + ("en".equals(lang) ? "      " + sample : "   (" + tg.name + ")")));
-            typeBoxes.add(b);
-            grid.add(b);
-        }
-        grid.setAlignmentX(Component.LEFT_ALIGNMENT);
-        grid.setMaximumSize(new Dimension(460, 400));
+        Consumer<JComponent> addLeft = c -> { c.setAlignmentX(Component.LEFT_ALIGNMENT); types.add(c); };
+        addLeft.accept(heading("lbl.unmatched"));
         types.add(Box.createVerticalStrut(4));
-        types.add(grid);
-        types.add(Box.createVerticalStrut(8));
-        check(otherBox, "chk.other").setAlignmentX(Component.LEFT_ALIGNMENT);
-        types.add(otherBox);
+        check(byTypeBox, "chk.byType");
+        byTypeBox.addActionListener(e -> updateTypeEnabled());
+        addLeft.accept(byTypeBox);
+        types.add(Box.createVerticalStrut(4));
+
+        // the editable list of types: tick to use, click a row to edit it
+        typeList.setCellRenderer(new TypeRenderer());
+        typeList.setSelectionMode(ListSelectionModel.SINGLE_SELECTION);
+        typeList.setVisibleRowCount(8);
+        typeList.addMouseListener(new MouseAdapter() {
+            @Override public void mousePressed(MouseEvent e) {
+                int i = typeList.locationToIndex(e.getPoint());
+                if (i < 0 || !typeList.isEnabled() || !typeList.getCellBounds(i, i).contains(e.getPoint())) return;
+                Settings.TypeDef td = typeModel.get(i);
+                if (e.getX() < 26) { td.on = !td.on; typeList.repaint(); }      // the tick box
+                typeName.setText(td.name);
+                typeExts.setText(extText(td.extensions));
+            }
+        });
+        keepLtr.add(typeList);
+        JScrollPane typeScroll = scroll(typeList);
+        typeScroll.setPreferredSize(new Dimension(440, 176));
+        typeScroll.setMaximumSize(new Dimension(Integer.MAX_VALUE, 176));
+        addLeft.accept(typeScroll);
+        types.add(Box.createVerticalStrut(6));
+
+        JPanel editor = new JPanel(new GridBagLayout());
+        editor.setOpaque(false);
+        GridBagConstraints g = new GridBagConstraints();
+        g.gridx = 0; g.gridy = 0; g.anchor = GridBagConstraints.LINE_START; g.fill = GridBagConstraints.HORIZONTAL;
+        g.insets = new Insets(0, 0, 2, 8); g.weightx = 0.35;
+        JLabel ln = label("types.folder");
+        editor.add(ln, g);
+        g.gridx = 1; g.weightx = 0.65; g.insets = new Insets(0, 0, 2, 0);
+        JLabel le = label("types.exts");
+        editor.add(le, g);
+        g.gridy = 1; g.gridx = 0; g.weightx = 0.35; g.insets = new Insets(0, 0, 2, 8); editor.add(typeName, g);
+        g.gridx = 1; g.weightx = 0.65; g.insets = new Insets(0, 0, 2, 0); editor.add(typeExts, g);
+        keepLtr.add(typeExts);
+        typeExts.addActionListener(e -> addType());
+        editor.setMaximumSize(new Dimension(Integer.MAX_VALUE, 60));
+        addLeft.accept(editor);
+        types.add(Box.createVerticalStrut(6));
+        Theme.KButton addType = button("types.add", true, this::addType);
+        Theme.KButton removeType = button("types.remove", false, this::removeType);
+        Theme.KButton resetTypes = button("types.reset", false, this::resetTypes);
+        JPanel typeBtns = new JPanel(new FlowLayout(FlowLayout.LEADING, 0, 0));
+        typeBtns.setOpaque(false);
+        typeBtns.add(addType);
+        typeBtns.add(Box.createHorizontalStrut(8));
+        typeBtns.add(removeType);
+        typeBtns.add(Box.createHorizontalStrut(8));
+        typeBtns.add(resetTypes);
+        addLeft.accept(typeBtns);
+        types.add(Box.createVerticalStrut(4));
+        JLabel help = wrappedMuted("types.help", 330);
+        addLeft.accept(help);
+        typeEditors.addAll(List.of(typeList, typeName, typeExts, addType, removeType, resetTypes, ln, le, help));
+        types.add(Box.createVerticalStrut(6));
+        check(otherBox, "chk.other");
+        addLeft.accept(otherBox);
+
+        // files the user moves back himself (right column, under Safety)
+        JPanel keep = new JPanel();
+        keep.setOpaque(false);
+        keep.setLayout(new BoxLayout(keep, BoxLayout.Y_AXIS));
+        Consumer<JComponent> addKeep = c -> { c.setAlignmentX(Component.LEFT_ALIGNMENT); keep.add(c); };
+        keep.add(Box.createVerticalStrut(14));
+        addKeep.accept(heading("lbl.keep"));
+        keep.add(Box.createVerticalStrut(4));
+        check(keepMovesBox, "chk.keepMoves");
+        addKeep.accept(keepMovesBox);
+        addKeep.accept(wrappedMuted("keep.help", 290));
+        keep.add(Box.createVerticalStrut(6));
+        JPanel forgetRow = new JPanel(new FlowLayout(FlowLayout.LEADING, 0, 0));
+        forgetRow.setOpaque(false);
+        forgetRow.add(button("btn.forget", false, this::forgetMoves));
+        addKeep.accept(forgetRow);
 
         JPanel safe = new JPanel(new GridLayout(0, 1, 0, 4));
         safe.setBackground(Theme.BG);
@@ -617,7 +684,11 @@ public final class MainWindow extends JFrame {
         typesWrap.add(types, BorderLayout.NORTH);
         JPanel safeWrap = new JPanel(new BorderLayout());
         safeWrap.setOpaque(false);
-        safeWrap.add(safe, BorderLayout.NORTH);
+        JPanel rightCol = new JPanel(new BorderLayout());
+        rightCol.setOpaque(false);
+        rightCol.add(safe, BorderLayout.NORTH);
+        rightCol.add(keep, BorderLayout.CENTER);
+        safeWrap.add(rightCol, BorderLayout.NORTH);
         body.add(typesWrap);
         body.add(safeWrap);
         p.add(body, BorderLayout.CENTER);
@@ -625,8 +696,90 @@ public final class MainWindow extends JFrame {
     }
 
     private void updateTypeEnabled() {
-        for (JCheckBox b : typeBoxes) b.setEnabled(byTypeBox.isSelected());
+        for (JComponent c : typeEditors) c.setEnabled(byTypeBox.isSelected());
         otherBox.setEnabled(byTypeBox.isSelected());
+        typeList.repaint();
+    }
+
+    /** A type row: tick box, folder name, extensions. */
+    private final class TypeRenderer extends JCheckBox implements javax.swing.ListCellRenderer<Settings.TypeDef> {
+        @Override public Component getListCellRendererComponent(JList<? extends Settings.TypeDef> list, Settings.TypeDef td,
+                                                                int index, boolean sel, boolean focus) {
+            boolean builtIn = Strings.has("type." + td.name);
+            String name = builtIn && "ar".equals(lang) ? td.name + "  (" + t("type." + td.name) + ")\u200E" : td.name;
+            String ex = td.extensions.isEmpty() ? t("types.none") : extText(td.extensions.size() > 9 ? td.extensions.subList(0, 9) : td.extensions)
+                    + (td.extensions.size() > 9 ? "  ..." : "");
+            setText("\u200E" + name + "      " + ex.replace(",", ""));
+            setSelected(td.on);
+            setEnabled(list.isEnabled());
+            setOpaque(true);
+            setBackground(sel ? Theme.PALE : (index % 2 == 0 ? Color.WHITE : new Color(250, 251, 252)));
+            setForeground(Theme.DARK);
+            setFont(list.getFont());
+            setComponentOrientation(ComponentOrientation.LEFT_TO_RIGHT);
+            return this;
+        }
+    }
+
+    private static String extText(List<String> exts) {
+        StringBuilder b = new StringBuilder();
+        for (String e : exts) b.append(b.length() > 0 ? ", " : "").append('.').append(e);
+        return b.toString();
+    }
+
+    private void refreshTypes() {
+        int keep = typeList.getSelectedIndex();
+        typeModel.clear();
+        for (Settings.TypeDef td : settings.types) typeModel.addElement(td);
+        if (keep >= 0 && keep < typeModel.size()) typeList.setSelectedIndex(keep);
+    }
+
+    /** Adds a new type, or updates the one with the same folder name. An extension belongs to one type only. */
+    private boolean addType() {
+        String name = typeName.getText().trim().replaceAll("^\\.+|\\.+$", "");
+        if (name.isEmpty() || name.matches(".*[\\\\/:*?\"<>|].*")) { warn(t("warn.custFolder")); return false; }
+        List<String> exts = Settings.parseExtensions(typeExts.getText());
+        if (exts == null) { warn(t("warn.typeBad")); return false; }
+        if (exts.isEmpty()) { warn(t("warn.typeExts")); return false; }
+        Settings.TypeDef target = null;
+        for (Settings.TypeDef td : settings.types) if (td.name.equalsIgnoreCase(name)) target = td;
+        if (target == null) { target = new Settings.TypeDef(name, exts, true); settings.types.add(target); }
+        else { target.name = name; target.extensions = new ArrayList<>(exts); target.on = true; }
+        List<String> taken = new ArrayList<>();
+        for (Settings.TypeDef td : settings.types) {
+            if (td == target) continue;
+            for (String e : exts) if (td.extensions.remove(e)) taken.add("." + e);
+        }
+        typeName.setText("");
+        typeExts.setText("");
+        refreshTypes();
+        typeList.setSelectedIndex(settings.types.indexOf(target));
+        typeList.ensureIndexIsVisible(settings.types.indexOf(target));
+        if (taken.isEmpty()) setFooter("foot.typeSaved", name);
+        else setFooter("foot.typeMoved", String.join(" ", taken), name);
+        return true;
+    }
+
+    private void removeType() {
+        int i = typeList.getSelectedIndex();
+        if (i < 0 || i >= settings.types.size()) return;
+        settings.types.remove(i);
+        typeName.setText("");
+        typeExts.setText("");
+        refreshTypes();
+    }
+
+    private void resetTypes() {
+        if (!ask(t("ask.resetTypes"))) return;
+        settings.types = Settings.defaultTypes();
+        typeName.setText("");
+        typeExts.setText("");
+        refreshTypes();
+    }
+
+    private void forgetMoves() {
+        int n = io.github.kal429.kfupmsorter.MovedMemory.forget();
+        setFooter("foot.forgot", n);
     }
 
     private void browse() {
@@ -882,8 +1035,9 @@ public final class MainWindow extends JFrame {
         termFolderBox.setSelected(settings.termFolder);
         watchField.setText(settings.watchFolder);
         byTypeBox.setSelected(settings.sortByType);
-        for (int i = 0; i < TypeGroup.ALL.size(); i++) typeBoxes.get(i).setSelected(settings.typeGroups.contains(TypeGroup.ALL.get(i).name));
+        refreshTypes();
         otherBox.setSelected(settings.otherFolder);
+        keepMovesBox.setSelected(settings.keepUserMoves);
         updateTypeEnabled();
     }
 
@@ -892,10 +1046,8 @@ public final class MainWindow extends JFrame {
         settings.termFolder = termFolderBox.isSelected();
         settings.watchFolder = watchField.getText().trim();
         settings.sortByType = byTypeBox.isSelected();
-        List<String> groups = new ArrayList<>();
-        for (int i = 0; i < TypeGroup.ALL.size(); i++) if (typeBoxes.get(i).isSelected()) groups.add(TypeGroup.ALL.get(i).name);
-        settings.typeGroups = groups;
         settings.otherFolder = otherBox.isSelected();
+        settings.keepUserMoves = keepMovesBox.isSelected();
         settings.courses = new ArrayList<>(new LinkedHashSet<>(settings.courses));
     }
 
@@ -907,6 +1059,13 @@ public final class MainWindow extends JFrame {
     private boolean save(boolean interactive) {
         // a filter typed but not yet added is almost certainly meant to be saved too
         if (!filterFolder.getText().trim().isEmpty() && !filterKeys.getText().trim().isEmpty() && !addFilter()) return false;
+        if (!typeName.getText().trim().isEmpty() && !typeExts.getText().trim().isEmpty() && byTypeBox.isSelected()) {
+            Settings.TypeDef same = null;
+            for (Settings.TypeDef td : settings.types) if (td.name.equalsIgnoreCase(typeName.getText().trim())) same = td;
+            // only when it is a change, not just a row picked for viewing
+            if ((same == null || !extText(same.extensions).equals(extText(Settings.parseExtensions(typeExts.getText()) == null
+                    ? List.of() : Settings.parseExtensions(typeExts.getText())))) && !addType()) return false;
+        }
         readForm();
         if (!Files.isDirectory(Paths.get(settings.watchFolder))) { warn(t("warn.folder")); return false; }
         if (settings.courses.isEmpty() && settings.filters.isEmpty() && !settings.sortByType) { warn(t("warn.nothing")); return false; }
@@ -934,6 +1093,7 @@ public final class MainWindow extends JFrame {
         UIManager.put("OptionPane.okButtonText", t("btn.ok"));
         UIManager.put("OptionPane.cancelButtonText", t("btn.cancel"));
         for (Runnable r : retext) r.run();
+        typeList.repaint();
         if (switching) {
             int keep = deptList.getSelectedIndex();
             busy = true;

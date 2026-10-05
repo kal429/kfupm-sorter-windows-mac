@@ -14,7 +14,7 @@ import javax.swing.UIManager;
  *   --preview        print what would move, without moving anything
  */
 public final class Main {
-    public static final String VERSION = "1.0.0";
+    public static final String VERSION = "1.1.0";
 
     public static void main(String[] args) {
         String mode = args.length > 0 ? args[0] : "";

@@ -12,7 +12,7 @@
   <a href="#بالعربية">العربية</a>
 </p>
 
-> **Two versions of KFUPM Sorter.** This one runs on **both Windows and Mac**. The other one, [kfupm-sorter-windows](https://github.com/kal429/kfupm-sorter-windows), is a lighter **Windows-only** app written in PowerShell, and it also has the iPhone / iPad version. Both sort the same way and use the same settings file, so pick whichever you like, but use only one of them on a Windows PC.
+> **Two versions of KFUPM Sorter.** This one runs on **both Windows and Mac**. The other one, [kfupm-sorter](https://github.com/kal429/kfupm-sorter), is a lighter **Windows-only** app written in PowerShell, and it also has the iPhone / iPad version. Both sort the same way and use the same settings file, so pick whichever you like, but use only one of them on a Windows PC.
 
 ---
 
@@ -100,7 +100,7 @@ On Windows, double-click `Build Windows installer.bat` (uses an installed JDK 21
 
 **KFUPM Sorter لنظامي Windows وMac**: يرتّب مجلد التنزيلات حسب مقررات الجامعة تلقائيًا. هذا التطبيق مكتوب بلغة Java ليعمل البرنامج الواحد على **Windows وmacOS**، وJava مرفقة بداخله فلا يلزم تثبيت أي شيء آخر.
 
-> توجد نسختان من KFUPM Sorter: هذه النسخة تعمل على **Windows وMac معًا**، والنسخة الأخرى [kfupm-sorter-windows](https://github.com/kal429/kfupm-sorter-windows) تعمل على **Windows فقط** (مكتوبة بـ PowerShell) وفيها نسخة iPhone وiPad. استعمل واحدة منهما فقط على جهاز Windows.
+> توجد نسختان من KFUPM Sorter: هذه النسخة تعمل على **Windows وMac معًا**، والنسخة الأخرى [kfupm-sorter](https://github.com/kal429/kfupm-sorter) تعمل على **Windows فقط** (مكتوبة بـ PowerShell) وفيها نسخة iPhone وiPad. استعمل واحدة منهما فقط على جهاز Windows.
 
 - اختر مقرراتك من الدليل الرسمي للجامعة (2,123 مقررًا من 58 قسمًا)، وأضف فلاترك المخصصة، ويُرتَّب ما سوى ذلك حسب نوع الملف.
 - **ترتيب تلقائي**: يفحص مجلد التنزيلات كل دقيقة ويبدأ عند تسجيل الدخول، مع أيقونة في شريط المهام (Windows) أو شريط القوائم (Mac).

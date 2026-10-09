@@ -43,7 +43,7 @@ jobs:
 
             **Mac:** open the .dmg and drag *KFUPM Sorter Desktop* into Applications. The first time, right-click the app and choose **Open** (it is not notarized by Apple yet; on macOS 15 use *System Settings › Privacy & Security › Open Anyway*).
 
-            **Windows:** no administrator rights needed. If Windows shows "Windows protected your PC", click **More info** then **Run anyway** (the installer is not code-signed yet). If you already use the PowerShell edition ([kfupm-sorter-windows](https://github.com/kal429/kfupm-sorter-windows)), use one of them, not both.
+            **Windows:** no administrator rights needed. If Windows shows "Windows protected your PC", click **More info** then **Run anyway** (the installer is not code-signed yet). If you already use the PowerShell edition ([kfupm-sorter](https://github.com/kal429/kfupm-sorter)), use one of them, not both.
 
             Java is included inside the app, so there is nothing else to install.
 

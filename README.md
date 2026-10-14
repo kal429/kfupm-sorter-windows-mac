@@ -12,6 +12,21 @@
   <a href="#بالعربية">العربية</a>
 </p>
 
+> [!IMPORTANT]
+> **Mac users: run one command after installing, or the app will not open.**
+> macOS shows *"KFUPM Sorter Desktop" Not Opened* because the app is free and not notarized by Apple.
+> 1. Drag *KFUPM Sorter Desktop* from the .dmg into **Applications**.
+> 2. Open **Terminal** (press Cmd + Space, type `Terminal`, press Return).
+> 3. Paste this line and press Return:
+>
+> ```
+> xattr -cr "/Applications/KFUPM Sorter Desktop.app"
+> ```
+>
+> 4. Open the app as usual. You only do this once (and again after installing a new version).
+>
+> The command only removes the "downloaded from the internet" mark from this one app. [بالعربية ↓](#بالعربية)
+
 > **Two versions of KFUPM Sorter.** This one runs on **both Windows and Mac**. The other one, [kfupm-sorter](https://github.com/kal429/kfupm-sorter), is a lighter **Windows-only** app written in PowerShell, and it also has the iPhone / iPad version. Both sort the same way and use the same settings file, so pick whichever you like, but use only one of them on a Windows PC.
 
 ---
@@ -55,7 +70,7 @@ Downloads/
 | Mac with Intel | [`KFUPM-Sorter-macOS-Intel.dmg`](https://github.com/kal429/kfupm-sorter-windows-mac/releases/latest/download/KFUPM-Sorter-macOS-Intel.dmg) |
 | Windows 10 / 11 | [`KFUPM-Sorter-Windows-Setup.exe`](https://github.com/kal429/kfupm-sorter-windows-mac/releases/latest/download/KFUPM-Sorter-Windows-Setup.exe) |
 
-**Mac:** open the .dmg and drag *KFUPM Sorter Desktop* into Applications. The app is not notarized by Apple yet, so the first time right-click it and choose **Open** (on macOS 15: *System Settings › Privacy & Security › Open Anyway*). When macOS asks to let it use your Downloads folder, choose **Allow**. Not sure which Mac you have? Apple menu › *About This Mac*: "Chip: Apple M…" means Apple silicon.
+**Mac:** open the .dmg and drag *KFUPM Sorter Desktop* into Applications. The app is not notarized by Apple, so before the first start open **Terminal** and run `xattr -cr "/Applications/KFUPM Sorter Desktop.app"` (see the box at the top). Instead of Terminal you can also try to open it once, then use *System Settings › Privacy & Security › Open Anyway*. When macOS asks to let it use your Downloads folder, choose **Allow**. Not sure which Mac you have? Apple menu › *About This Mac*: "Chip: Apple M…" means Apple silicon.
 
 **Windows:** run the installer. It installs for your user only. If Windows shows "Windows protected your PC", click **More info → Run anyway** (the installer is not code-signed yet). If you used the PowerShell edition before, your courses and filters are imported on first start; turn its automatic sorting off so two sorters don't work on the same folder.
 
@@ -98,6 +113,23 @@ On Windows, double-click `Build Windows installer.bat` (uses an installed JDK 21
 
 ## بالعربية
 
+> [!IMPORTANT]
+> **لمستخدمي Mac: نفّذ أمرًا واحدًا بعد التثبيت، وإلا فلن يفتح التطبيق.**
+> يعرض macOS رسالة «KFUPM Sorter Desktop Not Opened» لأن التطبيق مجاني وغير موثَّق من Apple.
+> 1. اسحب KFUPM Sorter Desktop من ملف .dmg إلى مجلد **التطبيقات**.
+> 2. افتح تطبيق **Terminal** (اضغط Cmd + Space واكتب Terminal ثم Return).
+> 3. الصق هذا السطر واضغط Return:
+>
+> <div dir="ltr">
+>
+> ```
+> xattr -cr "/Applications/KFUPM Sorter Desktop.app"
+> ```
+>
+> </div>
+>
+> 4. افتح التطبيق كالمعتاد. يكفي ذلك مرة واحدة (وتعيده بعد تثبيت إصدار جديد).
+
 **KFUPM Sorter لنظامي Windows وMac**: يرتّب مجلد التنزيلات حسب مقررات الجامعة تلقائيًا. هذا التطبيق مكتوب بلغة Java ليعمل البرنامج الواحد على **Windows وmacOS**، وJava مرفقة بداخله فلا يلزم تثبيت أي شيء آخر.
 
 > توجد نسختان من KFUPM Sorter: هذه النسخة تعمل على **Windows وMac معًا**، والنسخة الأخرى [kfupm-sorter](https://github.com/kal429/kfupm-sorter) تعمل على **Windows فقط** (مكتوبة بـ PowerShell) وفيها نسخة iPhone وiPad. استعمل واحدة منهما فقط على جهاز Windows.
@@ -112,7 +144,7 @@ On Windows, double-click `Build Windows installer.bat` (uses an installed JDK 21
 **التنزيل:** من [أحدث إصدار](https://github.com/kal429/kfupm-sorter-windows-mac/releases/latest):
 `KFUPM-Sorter-macOS-AppleSilicon.dmg` لأجهزة Mac بمعالج M1 أو أحدث، و`KFUPM-Sorter-macOS-Intel.dmg` لأجهزة Mac بمعالج Intel، و`KFUPM-Sorter-Windows-Setup.exe` لنظام Windows.
 
-**على Mac:** افتح ملف .dmg واسحب *KFUPM Sorter Desktop* إلى مجلد التطبيقات. ولأن التطبيق غير موثَّق من Apple بعد، افتحه أول مرة بالنقر بالزر الأيمن ثم **فتح** (وفي macOS 15: الإعدادات ‹ الخصوصية والأمان ‹ فتح على أي حال)، واسمح له باستخدام مجلد التنزيلات عندما يطلب ذلك.
+**على Mac:** افتح ملف .dmg واسحب *KFUPM Sorter Desktop* إلى مجلد التطبيقات. ولأن التطبيق غير موثَّق من Apple، نفّذ أمر Terminal المذكور في أعلى هذا القسم قبل فتحه أول مرة، واسمح له باستخدام مجلد التنزيلات عندما يطلب ذلك.
 
 **على Windows:** شغّل ملف التثبيت، ولا يحتاج صلاحيات المسؤول. وإن ظهرت رسالة «Windows protected your PC» فاضغط **More info** ثم **Run anyway**.
 

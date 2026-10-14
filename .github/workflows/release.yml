@@ -41,11 +41,18 @@ jobs:
             - **Mac with Intel:** `KFUPM-Sorter-macOS-Intel.dmg`
             - **Windows 10 / 11:** `KFUPM-Sorter-Windows-Setup.exe`
 
-            **Mac:** open the .dmg and drag *KFUPM Sorter Desktop* into Applications. The first time, right-click the app and choose **Open** (it is not notarized by Apple yet; on macOS 15 use *System Settings › Privacy & Security › Open Anyway*).
+            > [!IMPORTANT]
+            > **Mac: one command after installing, or the app will not open.** Drag *KFUPM Sorter Desktop* into Applications, open **Terminal**, paste this line and press Return:
+            >
+            > ```
+            > xattr -cr "/Applications/KFUPM Sorter Desktop.app"
+            > ```
+            >
+            > Then open the app as usual. (The app is free and not notarized by Apple, so macOS blocks it until this mark is removed.)
 
             **Windows:** no administrator rights needed. If Windows shows "Windows protected your PC", click **More info** then **Run anyway** (the installer is not code-signed yet). If you already use the PowerShell edition ([kfupm-sorter](https://github.com/kal429/kfupm-sorter)), use one of them, not both.
 
             Java is included inside the app, so there is nothing else to install.
 
             ---
-            **Mac:** افتح ملف .dmg المناسب لجهازك واسحب التطبيق إلى مجلد التطبيقات، وافتحه أول مرة بالنقر بالزر الأيمن ثم «فتح». **Windows:** شغّل KFUPM-Sorter-Windows-Setup.exe.
+            **Mac:** افتح ملف .dmg المناسب لجهازك واسحب التطبيق إلى مجلد التطبيقات، ثم افتح Terminal ونفّذ الأمر المذكور أعلاه مرة واحدة قبل فتحه. **Windows:** شغّل KFUPM-Sorter-Windows-Setup.exe.

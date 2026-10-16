@@ -10,9 +10,11 @@
 set -euo pipefail
 cd "$(dirname "$0")"
 
-VERSION=1.1.1
+VERSION=1.2.0
 NAME="KFUPM Sorter Desktop"
 MODULES=java.base,java.desktop,java.net.http
+# Java 21 keeps the elliptic-curve crypto (needed for HTTPS to GitHub and the bulletin) in its own module
+if java --list-modules 2>/dev/null | grep -q '^jdk.crypto.ec@'; then MODULES="$MODULES,jdk.crypto.ec"; fi
 SEP=":"
 case "$(uname -s)" in MINGW*|MSYS*|CYGWIN*) SEP=";" ;; esac
 

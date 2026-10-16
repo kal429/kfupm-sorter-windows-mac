@@ -78,10 +78,13 @@ try {
 
     # ---------------------------------------------------------------- jpackage
     Step 'Packaging KFUPM Sorter Desktop.exe with Java built in'
+    # Java 21 keeps the elliptic-curve crypto (HTTPS to GitHub and the bulletin) in its own module
+    $mods = 'java.base,java.desktop,java.net.http'
+    if ((& "$bin\java.exe" --list-modules) -match '^jdk\.crypto\.ec@') { $mods += ',jdk.crypto.ec' }
     & "$bin\jpackage.exe" --type app-image --name 'KFUPM Sorter Desktop' --input build\jar --main-jar kfupm-sorter-desktop.jar `
         --app-version $version --vendor 'KFUPM Sorter (student project)' --icon packaging\app.ico `
         --description 'Keeps your Downloads folder sorted by KFUPM course' `
-        --add-modules java.base,java.desktop,java.net.http `
+        --add-modules $mods `
         --jlink-options '--strip-debug --no-header-files --no-man-pages --compress=zip-6' `
         --dest build\image
     if ($LASTEXITCODE) { Fail 'jpackage' }
@@ -89,6 +92,8 @@ try {
     $p = Start-Process -FilePath $exe -ArgumentList '--preview' -Wait -PassThru -WindowStyle Hidden
     Write-Host "Quick check of the packaged app: exit code $($p.ExitCode)"
     if ($p.ExitCode -ne 0) { Fail 'the packaged app did not start' }
+    $u = Start-Process -FilePath $exe -ArgumentList '--check-update' -Wait -PassThru -WindowStyle Hidden
+    if ($u.ExitCode -ne 0) { Write-Host 'Note: the packaged app could not reach GitHub (offline?). The new-version check needs HTTPS.' -ForegroundColor Yellow }
 
     # ---------------------------------------------------------------- Inno Setup
     Step 'Building the installer (Inno Setup)'

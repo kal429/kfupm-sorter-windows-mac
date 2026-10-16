@@ -191,6 +191,83 @@ public final class SelfTest {
         check("moves it", eng.applyResorts(rs) == 1 && Files.exists(dl.resolve("ARCH/ARCh2027_Silicon_Battery_Proposal.pdf"))
                 && Files.exists(dl.resolve("Documents/research_paper.pdf")));
 
+        // ---- 1.2: new-version check
+        check("version compare", Updates.compare("v1.10.0", "1.9.3") > 0 && Updates.compare("1.1.1", "v1.1.1") == 0
+                && Updates.compare("1.1", "1.1.1") < 0 && Updates.compare("2.0.0", "1.99.99") > 0);
+        check("tag clean-up", Updates.clean("v1.2.0").equals("1.2.0") && Updates.clean("nightly").isEmpty());
+        check("installer per computer", "KFUPM-Sorter-Windows-Setup.exe".equals(Updates.assetName(AppDirs.OS.WINDOWS, "amd64"))
+                && "KFUPM-Sorter-macOS-AppleSilicon.dmg".equals(Updates.assetName(AppDirs.OS.MAC, "aarch64"))
+                && "KFUPM-Sorter-macOS-Intel.dmg".equals(Updates.assetName(AppDirs.OS.MAC, "x86_64"))
+                && Updates.assetName(AppDirs.OS.OTHER, "amd64") == null);
+        String rel = "{\"tag_name\":\"v9.0.0\",\"draft\":false,\"prerelease\":false,"
+                + "\"html_url\":\"https://github.com/kal429/kfupm-sorter-windows-mac/releases/tag/v9.0.0\","
+                + "\"assets\":[{\"name\":\"KFUPM-Sorter-macOS-Intel.dmg\",\"browser_download_url\":\"https://github.com/x/intel.dmg\"},"
+                + "{\"name\":\"KFUPM-Sorter-Windows-Setup.exe\",\"browser_download_url\":\"https://github.com/x/setup.exe\"}]}";
+        Updates.Info newer = Updates.parse(rel, "1.1.1", "KFUPM-Sorter-Windows-Setup.exe");
+        check("newer release found", newer != null && newer.version.equals("9.0.0") && newer.fileUrl.equals("https://github.com/x/setup.exe")
+                && newer.pageUrl.endsWith("/v9.0.0"));
+        check("same version is not offered", Updates.parse(rel, "9.0.0", null) == null && Updates.parse(rel, "10.0", null) == null);
+        check("missing installer falls back to the release page", Updates.parse(rel, "1.0.0", "nothing.zip").fileUrl.endsWith("/v9.0.0"));
+        check("drafts and pre-releases are ignored", Updates.parse(rel.replace("\"prerelease\":false", "\"prerelease\":true"), "1.0.0", null) == null
+                && Updates.parse(rel.replace("\"draft\":false", "\"draft\":true"), "1.0.0", null) == null);
+        check("only github.com links", Updates.parse(rel.replace("https://github.com/x/setup.exe", "https://evil.example/setup.exe"),
+                "1.0.0", "KFUPM-Sorter-Windows-Setup.exe").fileUrl.startsWith("https://github.com/kal429/"));
+        Updates.State st = new Updates.State();
+        long now = System.currentTimeMillis();
+        st.lastCheck = now - 3_600_000L;
+        boolean notYet = !Updates.dueInBackground(st, now);
+        st.lastCheck = now - 25L * 3_600_000L;
+        check("background asks once a day", notYet && Updates.dueInBackground(st, now));
+        // a local web server stands in for GitHub
+        com.sun.net.httpserver.HttpServer srv = com.sun.net.httpserver.HttpServer.create(new java.net.InetSocketAddress("127.0.0.1", 0), 0);
+        final String[] answer = {rel};
+        final String[] agent = {""};
+        srv.createContext("/latest", ex -> {
+            agent[0] = ex.getRequestHeaders().getFirst("User-Agent");
+            byte[] b = answer[0].getBytes(StandardCharsets.UTF_8);
+            ex.sendResponseHeaders(200, b.length);
+            ex.getResponseBody().write(b);
+            ex.close();
+        });
+        srv.start();
+        System.setProperty("kfupmsorter.updateUrl", "http://127.0.0.1:" + srv.getAddress().getPort() + "/latest");
+        Updates.Info got = Updates.check();
+        Updates.State saved = Updates.State.load();
+        check("check() over the network", got != null && got.version.equals("9.0.0") && saved.latest.equals("9.0.0")
+                && saved.lastCheck > 0 && agent[0].startsWith("KFUPM-Sorter/"));
+        answer[0] = rel.replace("v9.0.0", "v" + Main.VERSION);
+        check("check() says up to date", Updates.check() == null && Updates.State.load().latest.isEmpty());
+        // the API refuses (60 questions an hour per address): the public release page still answers
+        String base = "http://127.0.0.1:" + srv.getAddress().getPort();
+        srv.createContext("/refused", ex -> { ex.sendResponseHeaders(403, -1); ex.close(); });
+        srv.createContext("/page", ex -> {
+            ex.getResponseHeaders().add("Location", "https://github.com/kal429/kfupm-sorter-windows-mac/releases/tag/v9.1.0");
+            ex.sendResponseHeaders(302, -1);
+            ex.close();
+        });
+        System.setProperty("kfupmsorter.updateUrl", base + "/refused");
+        System.setProperty("kfupmsorter.releasePage", base + "/page");
+        Updates.Info viaPage = Updates.check();
+        check("falls back to the release page", viaPage != null && viaPage.version.equals("9.1.0")
+                && viaPage.pageUrl.endsWith("/releases/tag/v9.1.0"));
+        Updates.Info mem = Updates.remembered();
+        check("remembers the last answer", mem != null && mem.version.equals("9.1.0") && mem.pageUrl.equals(viaPage.pageUrl)
+                && mem.fileUrl.equals(viaPage.fileUrl) && !Updates.dueForWindow());
+        check("installer link from the tag", Updates.fromTagUrl("https://github.com/kal429/kfupm-sorter-windows-mac/releases/tag/v3.0.0",
+                "1.0.0", "KFUPM-Sorter-Windows-Setup.exe").fileUrl
+                .equals("https://github.com/kal429/kfupm-sorter-windows-mac/releases/download/v3.0.0/KFUPM-Sorter-Windows-Setup.exe")
+                && Updates.fromTagUrl("https://evil.example/releases/tag/v3.0.0", "1.0.0", null) == null
+                && Updates.fromTagUrl("https://github.com/kal429/kfupm-sorter-windows-mac/releases/tag/v1.0.0", "1.0.0", null) == null);
+        srv.stop(0);
+        System.setProperty("kfupmsorter.updateUrl", "http://127.0.0.1:9/nothing");
+        System.setProperty("kfupmsorter.releasePage", "http://127.0.0.1:9/nothing");
+        boolean threw = false;
+        try { Updates.check(); } catch (Exception e) { threw = true; }
+        check("no network is reported, not hidden", threw);
+        System.clearProperty("kfupmsorter.updateUrl");
+        System.clearProperty("kfupmsorter.releasePage");
+        check("update setting defaults to on", new Prefs().checkUpdates);
+
         // ---- autostart file contents (written into a temp home)
         System.out.println();
         System.out.println(passes + " passed, " + fails + " failed");

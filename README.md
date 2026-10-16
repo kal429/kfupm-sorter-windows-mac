@@ -53,6 +53,7 @@ Downloads/
 - **Automatic sorting**: a small background sorter checks your Downloads folder every minute and starts when you sign in. It has an icon in the system tray (Windows) or menu bar (Mac) with *Open*, *Sort now* and *Stop*. No administrator rights needed.
 - **Your own file types**: change the extensions of any type folder, or add your own by typing, e.g. a folder `Assembly` for `.asm, .s, .inc`. An extension belongs to one folder only.
 - **Respects your own moves**: if you take a sorted file and put it back in Downloads, it stays there. New downloads are still sorted. (Can be turned off; *Forget them* lets the sorter sort those files again.)
+- **Update notice**: when a new version is out, a bar at the top of the window says so, and *Update* opens the download for your computer. The background sorter shows one notification per new version. (Can be turned off in the About tab.)
 - **English or Arabic** interface (right-to-left in Arabic), KFUPM green and gold.
 
 ## Safety
@@ -60,7 +61,7 @@ Downloads/
 - It **never deletes** anything and **never overwrites**. A duplicate name becomes `name (1).pdf`.
 - It waits for downloads to finish: unfinished downloads and files younger than 20 seconds are left alone.
 - It only moves files, never folders. Every move is logged in the **Status** tab.
-- It sends nothing anywhere. The only network access is the optional "update catalog" button, which reads the public bulletin pages.
+- It sends nothing anywhere. The internet is used only by the "update catalog" button, which reads the public bulletin pages, and by the new-version check, which reads the public release page on GitHub (at most once a day in the background; can be turned off).
 
 ## Install
 
@@ -76,6 +77,12 @@ Downloads/
 
 Requirements: macOS 12 or later, or Windows 10 / 11. Nothing else to install.
 
+## Support the project
+
+KFUPM Sorter is free and always will be. If it saves you time, you can support it with **STC Bank (STC Pay)** on **0545769959**, or scan this code with the STC Bank app. The same is in the app's *About* tab.
+
+<p><img src="docs/support-qr.png" width="170" alt="STC Bank QR code"></p>
+
 ## How the code is organised
 
 | File | What it does |
@@ -87,10 +94,11 @@ Requirements: macOS 12 or later, or Windows 10 / 11. Nothing else to install.
 | `Catalog.java` | The bundled course list, and the update from bulletin.kfupm.edu.sa |
 | `Background.java` | Sorts every minute; tray / menu-bar icon |
 | `Autostart.java` | Starts the background sorter at sign-in (Startup folder / LaunchAgent), no admin rights |
+| `Updates.java` | Asks GitHub whether a newer version exists (the app never downloads or installs anything by itself) |
 | `Strings.java` | English and Arabic text |
 | `ui/MainWindow.java`, `ui/Theme.java` | The window (Swing) and the KFUPM colors |
 | `Json.java` | A tiny JSON reader and writer, so there are no libraries at all |
-| `src/test/.../SelfTest.java` | 42 checks of the rules and the engine |
+| `src/test/.../SelfTest.java` | 61 checks of the rules, the engine and the update check |
 | `packaging/` | Icons and the Inno Setup script for the Windows installer |
 
 Settings live in `%APPDATA%\KFUPM Sorter Desktop` on Windows and `~/Library/Application Support/KFUPM Sorter Desktop` on Mac.
@@ -140,6 +148,7 @@ On Windows, double-click `Build Windows installer.bat` (uses an installed JDK 21
 - لا يحذف ولا يستبدل أي ملف، ولا يرسل أي بيانات.
 - **أنواع ملفات خاصة بك**: عدّل امتدادات أي مجلد أو أضف نوعًا جديدًا بالكتابة، مثل مجلد `Assembly` للامتدادات `.asm, .s, .inc`.
 - **يحترم ما تنقله بنفسك**: إذا أعدت ملفًا مرتبًا إلى مجلد التنزيلات يبقى فيه، وتُرتَّب التنزيلات الجديدة كالمعتاد.
+- **تنبيه بالإصدارات الجديدة**: عند صدور إصدار جديد يظهر شريط أعلى النافذة، وزر **تحديث** يفتح ملف التنزيل المناسب لجهازك. ويمكن إيقافه من تبويب «حول البرنامج».
 
 **التنزيل:** من [أحدث إصدار](https://github.com/kal429/kfupm-sorter-windows-mac/releases/latest):
 `KFUPM-Sorter-macOS-AppleSilicon.dmg` لأجهزة Mac بمعالج M1 أو أحدث، و`KFUPM-Sorter-macOS-Intel.dmg` لأجهزة Mac بمعالج Intel، و`KFUPM-Sorter-Windows-Setup.exe` لنظام Windows.
@@ -147,6 +156,10 @@ On Windows, double-click `Build Windows installer.bat` (uses an installed JDK 21
 **على Mac:** افتح ملف .dmg واسحب *KFUPM Sorter Desktop* إلى مجلد التطبيقات. ولأن التطبيق غير موثَّق من Apple، نفّذ أمر Terminal المذكور في أعلى هذا القسم قبل فتحه أول مرة، واسمح له باستخدام مجلد التنزيلات عندما يطلب ذلك.
 
 **على Windows:** شغّل ملف التثبيت، ولا يحتاج صلاحيات المسؤول. وإن ظهرت رسالة «Windows protected your PC» فاضغط **More info** ثم **Run anyway**.
+
+### ادعم المشروع
+
+البرنامج مجاني وسيبقى مجانيًا. إذا وفّر عليك وقتًا، يمكنك دعمه عبر **STC Bank (STC Pay)** على الرقم **0545769959**، أو بمسح الرمز أعلاه في قسم «Support the project» بتطبيق STC Bank. وتجد ذلك أيضًا في تبويب «حول البرنامج» داخل التطبيق.
 
 </div>
 

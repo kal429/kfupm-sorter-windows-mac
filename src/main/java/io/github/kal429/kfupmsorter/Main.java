@@ -12,9 +12,10 @@ import javax.swing.UIManager;
  *   --background     sort every minute until automatic sorting is turned off
  *   --sort-once      sort once and print what moved (handy for testing)
  *   --preview        print what would move, without moving anything
+ *   --check-update   ask GitHub for a newer version and print the answer
  */
 public final class Main {
-    public static final String VERSION = "1.1.1";
+    public static final String VERSION = "1.2.0";
 
     public static void main(String[] args) {
         String mode = args.length > 0 ? args[0] : "";
@@ -33,6 +34,15 @@ public final class Main {
                 System.out.println((dry ? "Would move " : "Moved ") + r.moves.size() + " file(s).");
                 return;
             }
+            case "--check-update":
+                try {
+                    Updates.Info info = Updates.check();
+                    System.out.println(info == null ? "Up to date (" + VERSION + ")." : "New version " + info.version + ": " + info.buttonUrl());
+                } catch (Exception e) {
+                    System.out.println("Could not check: " + e);
+                    System.exit(1);
+                }
+                return;
             default:
                 openWindow();
         }

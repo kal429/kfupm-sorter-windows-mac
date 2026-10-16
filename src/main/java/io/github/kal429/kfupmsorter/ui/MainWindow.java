@@ -9,6 +9,7 @@ import io.github.kal429.kfupmsorter.Prefs;
 import io.github.kal429.kfupmsorter.Settings;
 import io.github.kal429.kfupmsorter.SortLog;
 import io.github.kal429.kfupmsorter.Strings;
+import io.github.kal429.kfupmsorter.Updates;
 
 import javax.swing.BorderFactory;
 import javax.swing.Box;
@@ -76,6 +77,7 @@ public final class MainWindow extends JFrame {
 
     static final String REPO_URL = "https://github.com/kal429/kfupm-sorter-windows-mac";
     static final String SITE_URL = "https://github.com/kal429/kfupm-sorter-windows-mac/releases/latest";
+    static final String SUPPORT_NUMBER = "0545769959";   // STC Bank (STC Pay)
 
     private final Prefs prefs = Prefs.load();
     private Settings settings;
@@ -138,6 +140,17 @@ public final class MainWindow extends JFrame {
     private final JLabel versionLabel = Theme.muted("");
     private final JLabel catalogLabel = new JLabel();
     private final JLabel updLabel = Theme.muted("");
+    private final JCheckBox checkUpdBox = new JCheckBox();
+    private final JLabel verStatus = Theme.muted(" ");
+    private Theme.KButton checkNowBtn;
+    private String verStatusKey = "";
+
+    // new version
+    private final JPanel updBanner = new JPanel(new BorderLayout(12, 0));
+    private final JPanel updWrap = new JPanel(new BorderLayout());
+    private final JLabel updBannerText = new JLabel();
+    private Updates.Info available;          // a newer release, once GitHub has answered
+    private boolean checkingVersion = false;
     private final JProgressBar progress = new JProgressBar();
     private Theme.KButton updateBtn, saveBtn;
 
@@ -169,6 +182,7 @@ public final class MainWindow extends JFrame {
         JPanel center = new JPanel(new BorderLayout());
         center.setOpaque(false);
         Theme.pad(center, 10, 10, 0);
+        center.add(buildUpdateBanner(), BorderLayout.NORTH);
         center.add(tabs, BorderLayout.CENTER);
         add(center, BorderLayout.CENTER);
         add(buildFooter(), BorderLayout.SOUTH);
@@ -180,6 +194,10 @@ public final class MainWindow extends JFrame {
         applySettingsToForm();
         applyLanguage(false);
         refreshStatus();
+        if (prefs.checkUpdates) {
+            if (Updates.dueForWindow()) checkForUpdate(false);
+            else showUpdate(Updates.remembered());
+        }
 
         addWindowListener(new WindowAdapter() {
             @Override public void windowClosed(WindowEvent e) { System.exit(0); }
@@ -921,6 +939,81 @@ public final class MainWindow extends JFrame {
         try { Desktop.getDesktop().open(new File(watchField.getText().trim())); } catch (Exception ignored) { }
     }
 
+    // ------------------------------------------------------------ new version
+
+    /** A gold bar above the tabs, shown only when GitHub has a newer release. */
+    private JComponent buildUpdateBanner() {
+        updBanner.setBackground(new Color(253, 246, 214));
+        updBanner.setBorder(BorderFactory.createCompoundBorder(
+                BorderFactory.createMatteBorder(1, 1, 1, 1, Theme.GOLD),
+                BorderFactory.createEmptyBorder(6, 12, 6, 8)));
+        updBannerText.setForeground(Theme.DARK);
+        updBannerText.setFont(Theme.size(Theme.base().getSize2D(), Font.BOLD));
+        Theme.KButton get = button("btn.getUpdate", true, this::openUpdate);
+        Theme.KButton later = button("btn.later", false, () -> { updWrap.setVisible(false); getContentPane().revalidate(); });
+        JPanel btns = row(get, later);
+        btns.setLayout(new FlowLayout(FlowLayout.TRAILING, 8, 0));
+        updBanner.add(updBannerText, BorderLayout.CENTER);
+        updBanner.add(btns, BorderLayout.LINE_END);
+        retext.add(() -> {
+            if (available != null) updBannerText.setText(Strings.fmt(t("ver.banner"), available.version, Main.VERSION));
+        });
+        updWrap.setOpaque(false);
+        updWrap.setBorder(BorderFactory.createEmptyBorder(0, 0, 8, 0));
+        updWrap.add(updBanner, BorderLayout.CENTER);
+        updWrap.setVisible(false);
+        return updWrap;
+    }
+
+    /** Asks GitHub in the background. "byHand" means the user pressed "Check now" and wants an answer either way. */
+    private void checkForUpdate(boolean byHand) {
+        if (checkingVersion) return;
+        checkingVersion = true;
+        checkNowBtn.setEnabled(false);
+        setVerStatus("ver.checking");
+        new SwingWorker<Updates.Info, Void>() {
+            @Override protected Updates.Info doInBackground() throws Exception { return Updates.check(); }
+            @Override protected void done() {
+                checkingVersion = false;
+                checkNowBtn.setEnabled(true);
+                try {
+                    showUpdate(get());
+                } catch (Exception e) {
+                    setVerStatus("ver.failed");
+                    if (byHand) warn(t("ver.failed"));
+                }
+            }
+        }.execute();
+    }
+
+    private void showUpdate(Updates.Info info) {
+        available = info;
+        if (info == null) { setVerStatus("ver.latest"); return; }
+        setVerStatus("ver.available");
+        updBannerText.setText(Strings.fmt(t("ver.banner"), info.version, Main.VERSION));
+        updWrap.setVisible(true);
+        getContentPane().revalidate();
+    }
+
+    private void setVerStatus(String key) {
+        verStatusKey = key;
+        verStatus.setText(verStatusText());
+    }
+
+    private String verStatusText() {
+        if (verStatusKey.isEmpty()) return " ";
+        if (verStatusKey.equals("ver.available") && available != null) return Strings.fmt(t(verStatusKey), available.version);
+        return t(verStatusKey);
+    }
+
+    /** "Update": the installer link on Windows, the release page (with the one Terminal step) on a Mac. */
+    private void openUpdate() {
+        if (available == null) return;
+        try { Desktop.getDesktop().browse(new URI(available.buttonUrl())); }
+        catch (Exception e) { warn(Strings.fmt(t("ver.noBrowser"), available.pageUrl)); return; }
+        setFooter(AppDirs.OS_TYPE == AppDirs.OS.MAC ? "ver.macNote" : "ver.winNote", available.version);
+    }
+
     // ------------------------------------------------------------ tab 5: about
 
     private JComponent buildAboutTab() {
@@ -950,6 +1043,20 @@ public final class MainWindow extends JFrame {
         add.accept(progress);
         col.add(Box.createVerticalStrut(18));
 
+        add.accept(heading("about.updates"));
+        col.add(Box.createVerticalStrut(4));
+        checkUpdBox.setSelected(prefs.checkUpdates);
+        checkUpdBox.addActionListener(e -> {
+            prefs.checkUpdates = checkUpdBox.isSelected();
+            prefs.save();
+            if (prefs.checkUpdates) checkForUpdate(false);
+        });
+        add.accept(check(checkUpdBox, "chk.updates"));
+        checkNowBtn = button("btn.checkNow", false, () -> checkForUpdate(true));
+        add.accept(row(checkNowBtn, verStatus));
+        retext.add(() -> verStatus.setText(verStatusText()));
+        col.add(Box.createVerticalStrut(18));
+
         add.accept(heading("about.privacy"));
         col.add(Box.createVerticalStrut(4));
         add.accept(label("privacy.1"));
@@ -961,10 +1068,64 @@ public final class MainWindow extends JFrame {
         add.accept(link(REPO_URL));
         add.accept(link(SITE_URL));
         col.add(Box.createVerticalStrut(18));
-        add.accept(mutedLabel("about.disclaimer"));
+        add.accept(wrappedMuted("about.disclaimer", 560));
 
-        p.add(col, BorderLayout.NORTH);
+        JPanel main = new JPanel(new BorderLayout(18, 0));
+        main.setOpaque(false);
+        main.add(col, BorderLayout.CENTER);
+        JPanel side = new JPanel(new BorderLayout());
+        side.setOpaque(false);
+        side.add(buildSupportBox(), BorderLayout.NORTH);
+        main.add(side, BorderLayout.LINE_END);
+        p.add(main, BorderLayout.NORTH);
         return p;
+    }
+
+    /** "Support the project": the STC Bank number, a copy button and the QR code to scan with the STC Bank app. */
+    private JComponent buildSupportBox() {
+        JPanel box = new JPanel();
+        box.setBackground(Theme.BG);
+        box.setLayout(new BoxLayout(box, BoxLayout.Y_AXIS));
+        box.setBorder(BorderFactory.createCompoundBorder(BorderFactory.createLineBorder(Theme.GRAY),
+                BorderFactory.createEmptyBorder(12, 14, 12, 14)));
+        Consumer<JComponent> add = c -> { c.setAlignmentX(Component.CENTER_ALIGNMENT); box.add(c); };
+
+        add.accept(heading("about.support"));
+        box.add(Box.createVerticalStrut(6));
+        JLabel text = Theme.muted("");
+        retext.add(() -> text.setText("<html><div style='width:190px;text-align:center'>"
+                + t("support.text").replace("&", "&amp;").replace("<", "&lt;").replace(">", "&gt;") + "</div></html>"));
+        add.accept(text);
+        box.add(Box.createVerticalStrut(8));
+        JLabel number = new JLabel(SUPPORT_NUMBER);
+        number.setFont(Theme.size(Theme.base().getSize2D() + 4f, Font.BOLD));
+        number.setForeground(Theme.FOREST);
+        keepLtr.add(number);
+        add.accept(number);
+        box.add(Box.createVerticalStrut(6));
+        add.accept(button("btn.copyNumber", false, this::copySupportNumber));
+        box.add(Box.createVerticalStrut(10));
+        java.net.URL qr = MainWindow.class.getResource("/kfupmsorter/support-qr.png");
+        if (qr != null) {
+            Image img = new ImageIcon(qr).getImage().getScaledInstance(160, 160, Image.SCALE_SMOOTH);
+            JLabel code = new JLabel(new ImageIcon(img));
+            code.setBorder(BorderFactory.createLineBorder(Color.WHITE, 4));
+            add.accept(code);
+            box.add(Box.createVerticalStrut(4));
+            JLabel scan = mutedLabel("support.scan");
+            add.accept(scan);
+        }
+        return box;
+    }
+
+    private void copySupportNumber() {
+        try {
+            java.awt.Toolkit.getDefaultToolkit().getSystemClipboard()
+                    .setContents(new java.awt.datatransfer.StringSelection(SUPPORT_NUMBER), null);
+            setFooter("foot.copied");
+        } catch (Exception e) {
+            setFooter("foot.copyFailed", SUPPORT_NUMBER);
+        }
     }
 
     private JLabel link(String url) {

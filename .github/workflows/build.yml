@@ -1,12 +1,12 @@
 # Builds KFUPM Sorter for Windows and macOS.
-# Runs on every push to main, and is also called by release.yml.
+# Runs on every push to stable (the default branch) or main, and is also called by release.yml.
 #   Windows: KFUPM-Sorter-Windows-Setup.exe       (Java bundled, per-user install)
 #   macOS:   KFUPM-Sorter-macOS-AppleSilicon.dmg and KFUPM-Sorter-macOS-Intel.dmg
 name: Build
 
 on:
   push:
-    branches: [main]
+    branches: [stable, main]
     paths-ignore: ['**.md', 'docs/**', 'LICENSE']
   workflow_dispatch:
   workflow_call:
@@ -45,9 +45,12 @@ jobs:
           if ($LASTEXITCODE) { exit 1 }
           Copy-Item -Recurse src/main/resources/* build/classes/
           jar --create --file build/jar/kfupm-sorter-desktop.jar --main-class io.github.kal429.kfupmsorter.Main -C build/classes .
+          # Java 21 keeps the elliptic-curve crypto (HTTPS to GitHub and the bulletin) in its own module
+          $mods = 'java.base,java.desktop,java.net.http'
+          if ((java --list-modules) -match '^jdk\.crypto\.ec@') { $mods += ',jdk.crypto.ec' }
           jpackage --type app-image --name "KFUPM Sorter Desktop" --input build/jar --main-jar kfupm-sorter-desktop.jar `
                    --app-version $version --vendor "KFUPM Sorter (student project)" --icon packaging/app.ico `
-                   --add-modules java.base,java.desktop,java.net.http `
+                   --add-modules $mods `
                    --jlink-options "--strip-debug --no-header-files --no-man-pages --compress=zip-6" `
                    --dest build/image
           if ($LASTEXITCODE) { exit 1 }
@@ -58,6 +61,10 @@ jobs:
           $exe = "build/image/KFUPM Sorter Desktop/KFUPM Sorter Desktop.exe"
           $p = Start-Process -FilePath $exe -ArgumentList '--preview' -Wait -PassThru -NoNewWindow
           Write-Host "preview exit code: $($p.ExitCode)"
+          # the packaged Java must be able to talk HTTPS to GitHub (new-version check, catalog update)
+          $u = Start-Process -FilePath $exe -ArgumentList '--check-update' -Wait -PassThru -NoNewWindow
+          Write-Host "check-update exit code: $($u.ExitCode)"
+          if ($u.ExitCode -ne 0) { Write-Error 'The packaged app could not reach GitHub over HTTPS'; exit 1 }
           if ($p.ExitCode -ne 0) { exit 1 }
       - name: Install Inno Setup if missing
         shell: pwsh

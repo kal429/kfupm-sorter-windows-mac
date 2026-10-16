@@ -1,0 +1,447 @@
+<!doctype html>
+<html lang="ar" dir="rtl">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<title>KFUPM Sorter</title>
+<meta name="claude:viewport-fit-sides" content="cover">
+<meta name="description" content="رتّب مجلد التنزيلات حسب مقررات KFUPM تلقائيًا. مجاني لـ Windows وMac.">
+<meta property="og:title" content="KFUPM Sorter">
+<meta property="og:description" content="Keeps your Downloads folder sorted by KFUPM course, automatically. Free for Windows and Mac.">
+<meta property="og:image" content="icon.png">
+<link rel="icon" href="icon.png">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=IBM+Plex+Mono:wght@400;500&family=IBM+Plex+Sans+Arabic:wght@400;500;600;700&display=swap">
+<style>
+/* Layout: one narrow column; a hero with the download button beside a live "Downloads" folder, then install steps for your system, then support. */
+:root {
+  --bg: #f6f8f6;
+  --surface: #ffffff;
+  --ink: #12261c;
+  --muted: #56685e;
+  --line: #d9e2dc;
+  --green: #00653a;
+  --green-ink: #ffffff;
+  --gold: #b88a1b;
+  --gold-soft: #f6eccf;
+  --code-bg: #0f2219;
+  --code-fg: #e6f2ea;
+  --display: "IBM Plex Sans Arabic", system-ui, -apple-system, "Segoe UI", sans-serif;
+  --body: "IBM Plex Sans Arabic", system-ui, -apple-system, "Segoe UI", sans-serif;
+  --mono: "IBM Plex Mono", ui-monospace, Menlo, Consolas, monospace;
+}
+@media (prefers-color-scheme: dark) {
+  :root:not([data-theme="light"]) {
+    --bg: #0c1611; --surface: #13211a; --ink: #e7efe9; --muted: #9db0a4; --line: #24382d;
+    --green: #1f9a62; --green-ink: #ffffff; --gold: #e0b450; --gold-soft: #2e2715;
+    --code-bg: #08110c; --code-fg: #d8eadf; color-scheme: dark;
+  }
+}
+:root[data-theme="dark"] {
+  --bg: #0c1611; --surface: #13211a; --ink: #e7efe9; --muted: #9db0a4; --line: #24382d;
+  --green: #1f9a62; --green-ink: #ffffff; --gold: #e0b450; --gold-soft: #2e2715;
+  --code-bg: #08110c; --code-fg: #d8eadf; color-scheme: dark;
+}
+html[lang="ar"] { --display: Arial, "Helvetica Neue", Helvetica, sans-serif; --body: Arial, "Helvetica Neue", Helvetica, sans-serif; }
+* { box-sizing: border-box; }
+[hidden] { display: none !important; }
+html { -webkit-text-size-adjust: 100%; }
+body {
+  margin: 0; background: var(--bg); color: var(--ink);
+  font: 16px/1.65 var(--body);
+}
+.wrap {
+  max-width: 1040px; margin: 0 auto;
+  padding-left: max(16px, env(safe-area-inset-left, 0px));
+  padding-right: max(16px, env(safe-area-inset-right, 0px));
+}
+a { color: var(--green); }
+:focus-visible { outline: 3px solid var(--gold); outline-offset: 2px; border-radius: 6px; }
+img { max-width: 100%; }
+
+/* header */
+header .wrap { display: flex; align-items: center; justify-content: space-between; gap: 12px; padding-block: 18px; }
+.brand { display: flex; align-items: center; gap: 10px; font-weight: 700; text-decoration: none; color: var(--ink); }
+.brand img { width: 36px; height: 36px; }
+.lang {
+  font: 500 14px var(--body); color: var(--ink); background: transparent;
+  border: 1px solid var(--line); border-radius: 999px; padding: 6px 14px; cursor: pointer;
+}
+.lang:hover { border-color: var(--green); }
+
+/* hero */
+.hero { display: grid; grid-template-columns: 1.1fr 0.9fr; gap: 48px; align-items: center; padding-block: 40px 56px; }
+.hero > * { min-width: 0; }
+.eyebrow { color: var(--gold); font-weight: 600; font-size: 14px; letter-spacing: .02em; margin: 0 0 10px; }
+h1 {
+  font-family: var(--display); font-weight: 700; font-size: clamp(34px, 5.4vw, 54px);
+  line-height: 1.2; margin: 0 0 16px; text-wrap: balance;
+}
+html[lang="en"] h1 { font-family: var(--body); letter-spacing: -0.015em; line-height: 1.12; }
+.lead { color: var(--muted); font-size: 18px; margin: 0 0 28px; max-width: 34em; }
+.dl {
+  display: inline-flex; align-items: center; gap: 12px; text-decoration: none;
+  background: var(--green); color: var(--green-ink); border-radius: 14px;
+  padding: 16px 26px; font-size: 19px; font-weight: 600;
+  box-shadow: 0 6px 18px -8px rgba(0, 101, 58, .6);
+  transition: transform .15s ease, box-shadow .15s ease;
+}
+.dl:hover { transform: translateY(-1px); box-shadow: 0 10px 24px -10px rgba(0, 101, 58, .7); }
+.dl svg { width: 22px; height: 22px; flex: none; }
+.dl-meta { margin: 12px 0 0; color: var(--muted); font-size: 14px; }
+.dl-meta code { font-family: var(--mono); font-size: 13px; }
+.choose { display: flex; flex-wrap: wrap; gap: 8px; margin-top: 18px; }
+.choose a {
+  font-size: 14px; text-decoration: none; color: var(--ink); border: 1px solid var(--line);
+  background: var(--surface); padding: 7px 14px; border-radius: 999px;
+}
+.choose a:hover { border-color: var(--green); }
+.choose a[aria-current="true"] { border-color: var(--green); color: var(--green); font-weight: 600; }
+.mobile-note {
+  background: var(--gold-soft); border-radius: 12px; padding: 14px 16px; margin: 0 0 18px; font-size: 15px;
+}
+
+/* the Downloads folder demo */
+.folder {
+  background: var(--surface); border: 1px solid var(--line); border-radius: 16px; overflow: hidden;
+  font-family: var(--mono); font-size: 13.5px; direction: ltr; text-align: left;
+  box-shadow: 0 20px 40px -28px rgba(18, 38, 28, .35);
+}
+.folder-bar { display: flex; align-items: center; gap: 8px; padding: 10px 14px; border-bottom: 1px solid var(--line); color: var(--muted); font-size: 12.5px; }
+.folder-bar i { width: 10px; height: 10px; border-radius: 50%; background: var(--line); display: inline-block; }
+.tree { margin: 0; padding: 14px 18px 18px; list-style: none; line-height: 1.9; overflow-x: auto; }
+.tree ul { list-style: none; margin: 0; padding-left: 20px; border-left: 1px dashed var(--line); margin-left: 6px; }
+.tree .dir { color: var(--ink); font-weight: 500; }
+.tree .dir::before { content: "▸ "; color: var(--gold); }
+.tree .file { color: var(--muted); white-space: nowrap; }
+.tree .new { color: var(--green); font-weight: 500; }
+@media (prefers-reduced-motion: no-preference) {
+  .tree .new { animation: land 4s ease-in-out infinite; }
+  @keyframes land { 0%, 12% { opacity: .25; transform: translateX(10px); } 24%, 100% { opacity: 1; transform: none; } }
+}
+
+/* sections */
+section { padding-block: 44px; border-top: 1px solid var(--line); }
+h2 { font-family: var(--display); font-size: clamp(24px, 3.4vw, 30px); margin: 0 0 8px; text-wrap: balance; }
+html[lang="en"] h2 { font-family: var(--body); letter-spacing: -0.01em; }
+.sub { color: var(--muted); margin: 0 0 24px; max-width: 40em; }
+
+.tabs { display: flex; flex-wrap: wrap; gap: 6px; margin-bottom: 20px; }
+.tab {
+  font: 500 15px var(--body); background: transparent; color: var(--muted); cursor: pointer;
+  border: 1px solid var(--line); border-radius: 10px; padding: 8px 16px;
+}
+.tab[aria-selected="true"] { background: var(--ink); color: var(--bg); border-color: var(--ink); }
+.steps { margin: 0; padding: 0; list-style: none; counter-reset: s; display: grid; gap: 14px; max-width: 46em; }
+.steps > li { counter-increment: s; display: grid; grid-template-columns: 34px 1fr; gap: 14px; align-items: start; }
+.steps > li > div { min-width: 0; }
+.steps > li::before {
+  content: counter(s); width: 34px; height: 34px; border-radius: 50%; display: grid; place-items: center;
+  background: var(--gold-soft); color: var(--gold); font-weight: 700; font-family: var(--mono);
+}
+.steps b { font-weight: 600; }
+.cmd {
+  margin-top: 10px; display: flex; align-items: center; gap: 10px; direction: ltr;
+  background: var(--code-bg); color: var(--code-fg); border-radius: 12px; padding: 10px 10px 10px 16px;
+}
+.cmd code { flex: 1; min-width: 0; overflow-x: auto; white-space: nowrap; font: 14px var(--mono); padding-block: 4px; }
+.copy {
+  flex: none; font: 600 13px var(--body); cursor: pointer; border: 0; border-radius: 8px;
+  background: var(--gold); color: #1a1405; padding: 8px 14px;
+}
+.copy.done { background: var(--green); color: var(--green-ink); }
+.note { color: var(--muted); font-size: 14.5px; margin: 6px 0 0; }
+
+.features { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 28px 40px; margin: 0; padding: 0; list-style: none; }
+.features h3 { margin: 0 0 4px; font-size: 17px; }
+.features p { margin: 0; color: var(--muted); font-size: 15px; }
+
+.support { display: grid; grid-template-columns: 1fr auto; gap: 32px; align-items: center;
+  background: var(--surface); border: 1px solid var(--line); border-radius: 18px; padding: 28px; }
+.support > div { min-width: 0; }
+.support img { width: 150px; height: 150px; border-radius: 10px; background: #fff; padding: 6px; border: 1px solid var(--line); }
+.number { display: flex; flex-wrap: wrap; align-items: center; gap: 12px; margin-top: 14px; }
+.number span { font: 600 22px var(--mono); direction: ltr; user-select: all; letter-spacing: .03em; }
+.copy.alt { background: transparent; color: var(--ink); border: 1px solid var(--line); }
+
+footer { border-top: 1px solid var(--line); color: var(--muted); font-size: 13.5px; }
+footer .wrap { padding-block: 28px 40px; display: flex; flex-wrap: wrap; justify-content: space-between; gap: 12px; }
+
+@media (max-width: 820px) {
+  .hero { grid-template-columns: 1fr; gap: 32px; padding-block: 20px 40px; }
+  .features { grid-template-columns: 1fr; }
+}
+@media (max-width: 520px) {
+  .dl { width: 100%; justify-content: center; padding: 15px 18px; font-size: 17px; }
+  .support { grid-template-columns: 1fr; padding: 20px; }
+}
+</style>
+</head>
+<body>
+
+<header>
+  <div class="wrap">
+    <a class="brand" href="#"><img src="icon.png" alt="" width="36" height="36"><span>KFUPM Sorter</span></a>
+    <button class="lang" id="lang" type="button">English</button>
+  </div>
+</header>
+
+<main>
+  <div class="wrap hero">
+    <div>
+      <p class="eyebrow" data-i18n="eyebrow">مجاني · لنظامي Windows وMac · بالعربية والإنجليزية</p>
+      <h1 data-i18n="h1">تنتقل ملفاتك إلى مجلد مقررها تلقائيًا.</h1>
+      <p class="lead" data-i18n="lead">اختر مقرراتك لهذا الفصل الدراسي، وسينتقل كل ملف تنزّله من Blackboard أو البريد الإلكتروني تلقائيًا إلى مجلد مقرره داخل مجلد التنزيلات، ويُرتَّب ما سوى ذلك حسب نوعه.</p>
+
+      <p class="mobile-note" id="mobileNote" hidden data-i18n="mobile">هذا البرنامج مخصص للحاسوب. افتح هذه الصفحة من جهاز يعمل بنظام Windows أو Mac لتنزيله.</p>
+
+      <a class="dl" id="dl" href="https://github.com/kal429/kfupm-sorter-windows-mac/releases/latest/download/KFUPM-Sorter-Windows-Setup.exe">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M12 3v12m0 0-5-5m5 5 5-5M4 21h16"/></svg>
+        <span id="dlLabel">تنزيل لـ Windows</span>
+      </a>
+      <p class="dl-meta"><span id="dlVersion"></span><code id="dlFile">KFUPM-Sorter-Windows-Setup.exe</code></p>
+
+      <div class="choose" id="choose" aria-label="Other systems">
+        <a href="#" data-os="win">Windows 10 / 11</a>
+        <a href="#" data-os="mac-arm" data-i18n="macArm">Mac (M1 أو أحدث)</a>
+        <a href="#" data-os="mac-intel" data-i18n="macIntel">Mac (Intel)</a>
+      </div>
+    </div>
+
+    <div class="folder" aria-label="Example: a sorted Downloads folder">
+      <div class="folder-bar"><i></i><i></i><i></i><span>Downloads</span></div>
+      <ul class="tree">
+        <li><span class="dir">261</span>
+          <ul>
+            <li><span class="dir">COE 301</span>
+              <ul><li class="file new">Lecture_T261_COE_301_Ch3.pdf</li></ul></li>
+            <li><span class="dir">EE 236</span>
+              <ul><li class="file">261-EE236-L2-Resistive Circuits.pdf</li></ul></li>
+            <li><span class="dir">ENGL 214</span>
+              <ul><li class="file">ENGL214_Progress_Report.docx</li></ul></li>
+          </ul></li>
+        <li><span class="dir">Internship</span>
+          <ul><li class="file">Internship_Offer_Letter.pdf</li></ul></li>
+        <li><span class="dir">Documents</span></li>
+        <li><span class="dir">Videos</span></li>
+      </ul>
+    </div>
+  </div>
+
+  <section id="install">
+    <div class="wrap">
+      <h2 data-i18n="installH">التثبيت</h2>
+      <p class="sub" data-i18n="installSub">يستغرق التثبيت دقيقة واحدة، ولا يحتاج إلى صلاحيات المسؤول أو إلى تثبيت Java.</p>
+
+      <div class="tabs" role="tablist">
+        <button class="tab" role="tab" id="tab-win" data-tab="win" type="button">Windows</button>
+        <button class="tab" role="tab" id="tab-mac" data-tab="mac" type="button">Mac</button>
+      </div>
+
+      <ol class="steps" id="steps-win">
+        <li><div data-i18n="w1">شغّل الملف <b>KFUPM-Sorter-Windows-Setup.exe</b> بعد اكتمال التنزيل.</div></li>
+        <li><div data-i18n="w2">إذا ظهرت رسالة «Windows protected your PC» فاضغط <b>More info</b> ثم <b>Run anyway</b>. تظهر هذه الرسالة لأن البرنامج مجاني وغير موقَّع رقميًا.</div></li>
+        <li><div data-i18n="w3">افتح البرنامج واختر مقرراتك، وبذلك يكتمل الإعداد. يرتّب البرنامج التنزيلات كل دقيقة، ويعمل تلقائيًا عند تسجيل الدخول.</div></li>
+      </ol>
+
+      <ol class="steps" id="steps-mac" hidden>
+        <li><div data-i18n="m1">افتح ملف <b>.dmg</b> واسحب <b>KFUPM Sorter Desktop</b> إلى مجلد <b>Applications</b>.</div></li>
+        <li><div><span data-i18n="m2">افتح تطبيق <b>Terminal</b> (اضغط Cmd + Space واكتب Terminal)، ثم الصق هذا السطر واضغط Return:</span>
+          <div class="cmd"><code id="cmdText">xattr -cr "/Applications/KFUPM Sorter Desktop.app"</code><button class="copy" id="copyCmd" type="button" data-i18n="copy">نسخ</button></div>
+          <p class="note" data-i18n="m2note">من دون هذا الأمر يعرض macOS رسالة بأن التطبيق لا يمكن فتحه، لأنه غير موثَّق من Apple. يزيل الأمر علامة «منزَّل من الإنترنت» عن هذا التطبيق فقط، ويلزم تنفيذه مرة أخرى بعد كل تحديث.</p></div></li>
+        <li><div data-i18n="m3">افتح التطبيق، واختر <b>Allow</b> عندما يطلب الإذن باستخدام مجلد التنزيلات.</div></li>
+        <li><div data-i18n="m4">لا تعرف نوع جهازك؟ من قائمة Apple اختر <b>About This Mac</b>. إذا ظهر «Chip: Apple M…» فجهازك بمعالج M1 أو أحدث، وإذا ظهر «Processor: Intel» فهو بمعالج Intel.</div></li>
+      </ol>
+    </div>
+  </section>
+
+  <section>
+    <div class="wrap">
+      <h2 data-i18n="featH">ماذا يفعل البرنامج؟</h2>
+      <p class="sub" data-i18n="featSub">2,123 مقررًا من 58 قسمًا، من الدليل الرسمي للجامعة.</p>
+      <ul class="features">
+        <li><h3 data-i18n="f1h">يتعرّف على رمز المقرر أيًّا كانت طريقة كتابته</h3><p data-i18n="f1p">يلتقط COE 301 الملفين COE301_Lab.pdf وCoe-301 HW.docx، ولا يلتقط COE 3011.</p></li>
+        <li><h3 data-i18n="f2h">فلاتر خاصة بك</h3><p data-i18n="f2p">مجلد للتدريب التعاوني أو النادي أو مشروع جانبي، يُطابَق بكلمات تختارها بنفسك.</p></li>
+        <li><h3 data-i18n="f3h">لا يحذف أي ملف</h3><p data-i18n="f3p">ينقل الملفات فقط، ولا يستبدل ملفًا موجودًا، وينتظر اكتمال التنزيل، ويسجّل كل عملية نقل.</p></li>
+        <li><h3 data-i18n="f4h">يحترم ترتيبك</h3><p data-i18n="f4p">إذا أعدت ملفًا إلى مجلد التنزيلات بنفسك فسيبقى فيه، كما ينبّهك البرنامج عند صدور إصدار جديد.</p></li>
+      </ul>
+    </div>
+  </section>
+
+  <section id="support">
+    <div class="wrap">
+      <div class="support">
+        <div>
+          <h2 data-i18n="supH">ادعم المشروع</h2>
+          <p class="sub" style="margin:0" data-i18n="supP">البرنامج مجاني وسيبقى مجانيًا. إذا وفّر عليك وقتًا، يمكنك دعمه عبر STC Bank (STC Pay) على الرقم أدناه، أو بمسح الرمز من تطبيق STC Bank.</p>
+          <div class="number"><span id="payNum">0545769959</span><button class="copy alt" id="copyNum" type="button" data-i18n="copyNum">نسخ الرقم</button></div>
+        </div>
+        <img src="support-qr.png" alt="STC Bank QR code" width="150" height="150">
+      </div>
+    </div>
+  </section>
+</main>
+
+<footer>
+  <div class="wrap">
+    <span data-i18n="foot">مشروع طلابي مستقل، وغير تابع لجامعة الملك فهد للبترول والمعادن. رخصة MIT.</span>
+    <a href="https://github.com/kal429/kfupm-sorter-windows-mac" data-i18n="source">الكود المصدري على GitHub</a>
+  </div>
+</footer>
+
+<script>
+(function () {
+  var BASE = "https://github.com/kal429/kfupm-sorter-windows-mac/releases/latest/download/";
+  var FILES = {
+    "win": "KFUPM-Sorter-Windows-Setup.exe",
+    "mac-arm": "KFUPM-Sorter-macOS-AppleSilicon.dmg",
+    "mac-intel": "KFUPM-Sorter-macOS-Intel.dmg"
+  };
+
+  var T = {
+    ar: {
+      label: { "win": "تنزيل لـ Windows", "mac-arm": "تنزيل لـ Mac (M1 أو أحدث)", "mac-intel": "تنزيل لـ Mac (Intel)" },
+      version: function (v) { return "الإصدار " + v + " · "; },
+      copied: "تم النسخ", copy: "نسخ", copyNum: "نسخ الرقم", langBtn: "English"
+    },
+    en: {
+      label: { "win": "Download for Windows", "mac-arm": "Download for Mac (M1 or newer)", "mac-intel": "Download for Mac (Intel)" },
+      version: function (v) { return "Version " + v + " · "; },
+      copied: "Copied", copy: "Copy", copyNum: "Copy number", langBtn: "العربية",
+      eyebrow: "Free · Windows and Mac · English and Arabic",
+      h1: "Every download lands in its course folder, on its own.",
+      lead: "Pick your courses for the term. Every file you download from Blackboard or email moves into its course folder inside Downloads, and everything else is sorted by type.",
+      mobile: "This is a desktop app. Open this page on a Windows PC or a Mac to download it.",
+      macArm: "Mac (M1 or newer)", macIntel: "Mac (Intel)",
+      installH: "Install", installSub: "Takes a minute. No admin rights, no Java to install.",
+      w1: "Run <b>KFUPM-Sorter-Windows-Setup.exe</b> when the download finishes.",
+      w2: "If you see “Windows protected your PC”, click <b>More info</b>, then <b>Run anyway</b>. It shows because the app is free and not code-signed.",
+      w3: "Open the app and pick your courses. It sorts your Downloads every minute and starts when you sign in.",
+      m1: "Open the <b>.dmg</b> and drag <b>KFUPM Sorter Desktop</b> into <b>Applications</b>.",
+      m2: "Open <b>Terminal</b> (press Cmd + Space and type Terminal), paste this line and press Return:",
+      m2note: "Without it, macOS says the app can’t be opened, because it isn’t notarized by Apple. The command only removes the “downloaded from the internet” mark from this one app. Run it again after each update.",
+      m3: "Open the app and choose <b>Allow</b> when it asks to use your Downloads folder.",
+      m4: "Not sure which Mac you have? Apple menu → <b>About This Mac</b>. “Chip: Apple M…” means M1 or newer; “Processor: Intel” means Intel.",
+      featH: "What it does", featSub: "2,123 courses from 58 departments, from the official KFUPM bulletin.",
+      f1h: "Finds the course however it’s written", f1p: "COE 301 catches COE301_Lab.pdf and Coe-301 HW.docx, but not COE 3011.",
+      f2h: "Your own filters", f2p: "A folder for your internship, a club or a side project, matched by keywords you choose.",
+      f3h: "Never deletes anything", f3p: "It only moves files, never overwrites, and waits until a download finishes. Every move is logged.",
+      f4h: "Respects your own moves", f4p: "Put a file back in Downloads and it stays there. It also tells you when a new version is out.",
+      supH: "Support the project",
+      supP: "KFUPM Sorter is free and always will be. If it saves you time, you can support it with STC Bank (STC Pay) on this number, or scan the code with the STC Bank app.",
+      foot: "An independent student project, not affiliated with King Fahd University of Petroleum and Minerals. MIT License.",
+      source: "Source code on GitHub"
+    }
+  };
+
+  var store = {
+    get: function (k) { try { return localStorage.getItem(k); } catch (e) { return null; } },
+    set: function (k, v) { try { localStorage.setItem(k, v); } catch (e) {} }
+  };
+
+  var arOriginal = {};
+  document.querySelectorAll("[data-i18n]").forEach(function (el) { arOriginal[el.dataset.i18n] = el.innerHTML; });
+
+  var lang = store.get("lang") === "en" ? "en" : "ar";
+  var os = "win";
+  var version = "";
+
+  function setDownload(which) {
+    os = which;
+    var a = document.getElementById("dl");
+    a.href = BASE + FILES[which];
+    document.getElementById("dlLabel").textContent = T[lang].label[which];
+    document.getElementById("dlFile").textContent = FILES[which];
+    document.querySelectorAll("#choose a").forEach(function (c) {
+      c.setAttribute("aria-current", c.dataset.os === which ? "true" : "false");
+      c.href = BASE + FILES[c.dataset.os];
+    });
+    showTab(which === "win" ? "win" : "mac");
+  }
+
+  function showTab(t) {
+    document.getElementById("steps-win").hidden = t !== "win";
+    document.getElementById("steps-mac").hidden = t !== "mac";
+    document.querySelectorAll(".tab").forEach(function (b) { b.setAttribute("aria-selected", b.dataset.tab === t ? "true" : "false"); });
+  }
+
+  function applyLang(l) {
+    lang = l;
+    document.documentElement.lang = l;
+    document.documentElement.dir = l === "ar" ? "rtl" : "ltr";
+    document.querySelectorAll("[data-i18n]").forEach(function (el) {
+      var k = el.dataset.i18n;
+      if (l === "ar") el.innerHTML = arOriginal[k];
+      else if (typeof T.en[k] === "string") el.innerHTML = T.en[k];
+    });
+    document.getElementById("lang").textContent = T[l].langBtn;
+    document.getElementById("dlVersion").textContent = version ? T[l].version(version) : "";
+    setDownload(os);
+    store.set("lang", l);
+  }
+
+  // Detect the visitor's system. Apple Silicon vs Intel is only reliable in Chromium browsers,
+  // so Safari and Firefox users get the M1 build (every Mac sold since 2021) plus the Intel link right under it.
+  function detect() {
+    var ua = navigator.userAgent || "";
+    var mobile = /iPhone|iPad|Android|Mobile/i.test(ua) || (/Macintosh/.test(ua) && navigator.maxTouchPoints > 1);
+    if (mobile) document.getElementById("mobileNote").hidden = false;
+    if (!/Mac/i.test(ua) || mobile && !/Macintosh/.test(ua)) { setDownload("win"); return; }
+    setDownload("mac-arm");
+    try {
+      var c = document.createElement("canvas").getContext("webgl");
+      var ext = c && c.getExtension("WEBGL_debug_renderer_info");
+      var r = ext ? String(c.getParameter(ext.UNMASKED_RENDERER_WEBGL)) : "";
+      if (/Intel|AMD|Radeon|NVIDIA/i.test(r)) setDownload("mac-intel");
+    } catch (e) {}
+    if (navigator.userAgentData && navigator.userAgentData.getHighEntropyValues) {
+      navigator.userAgentData.getHighEntropyValues(["architecture"]).then(function (v) {
+        if (v.architecture === "x86") setDownload("mac-intel");
+        else if (v.architecture === "arm") setDownload("mac-arm");
+      }).catch(function () {});
+    }
+  }
+
+  function copy(btn, text, doneLabel, label) {
+    function done() {
+      btn.textContent = doneLabel; btn.classList.add("done");
+      setTimeout(function () { btn.textContent = label(); btn.classList.remove("done"); }, 1600);
+    }
+    function fallback() {
+      var r = document.createRange(); r.selectNodeContents(btn.previousElementSibling);
+      var s = getSelection(); s.removeAllRanges(); s.addRange(r);
+    }
+    if (navigator.clipboard && navigator.clipboard.writeText) {
+      navigator.clipboard.writeText(text).then(done, fallback);
+    } else fallback();
+  }
+
+  document.getElementById("lang").addEventListener("click", function () { applyLang(lang === "ar" ? "en" : "ar"); });
+  document.querySelectorAll(".tab").forEach(function (b) { b.addEventListener("click", function () { showTab(b.dataset.tab); }); });
+  document.querySelectorAll("#choose a").forEach(function (a) {
+    a.addEventListener("click", function () { setDownload(a.dataset.os); });
+  });
+  document.getElementById("copyCmd").addEventListener("click", function (e) {
+    copy(e.currentTarget, document.getElementById("cmdText").textContent, T[lang].copied, function () { return T[lang].copy; });
+  });
+  document.getElementById("copyNum").addEventListener("click", function (e) {
+    copy(e.currentTarget, "0545769959", T[lang].copied, function () { return T[lang].copyNum; });
+  });
+
+  detect();
+  applyLang(lang);
+
+  // Show the current version number; the download links themselves always point at the latest release.
+  fetch("https://api.github.com/repos/kal429/kfupm-sorter-windows-mac/releases/latest")
+    .then(function (r) { return r.ok ? r.json() : null; })
+    .then(function (j) {
+      if (!j || !j.tag_name) return;
+      version = j.tag_name.replace(/^v/, "");
+      document.getElementById("dlVersion").textContent = T[lang].version(version);
+    })
+    .catch(function () {});
+})();
+</script>
+</body>
+</html>

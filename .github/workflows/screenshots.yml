@@ -47,7 +47,8 @@ jobs:
           foreach ($lang in 'en', 'ar') {
             if (Test-Path $data) { Remove-Item -Recurse -Force $data }
             New-Item -ItemType Directory -Force $data | Out-Null
-            java -Dsun.java2d.uiScale=2 -Duser.timezone=Asia/Riyadh "-Dkfupmsorter.data=$data" -cp "build/classes;build/shots" Shots $lang site/shots
+            # PowerShell splits -Dname.with.dots=value unless it is quoted
+            java '-Dsun.java2d.uiScale=2' '-Duser.timezone=Asia/Riyadh' "-Dkfupmsorter.data=$data" -cp "build/classes;build/shots" Shots $lang site/shots
             if ($LASTEXITCODE) { exit 1 }
           }
           Get-ChildItem site/shots, site/og-image.png | Format-Table Name, Length

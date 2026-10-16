@@ -100,12 +100,12 @@ html[lang="en"] h1 { font-family: var(--body); letter-spacing: -0.015em; line-he
 .dl-meta { margin: 12px 0 0; color: var(--muted); font-size: 14px; }
 .dl-meta code { font-family: var(--mono); font-size: 13px; }
 .choose { display: flex; flex-wrap: wrap; gap: 8px; margin-top: 18px; }
-.choose a {
-  font-size: 14px; text-decoration: none; color: var(--ink); border: 1px solid var(--line);
+.choose button {
+  font: inherit; font-size: 14px; color: var(--ink); border: 1px solid var(--line); cursor: pointer;
   background: var(--surface); padding: 7px 14px; border-radius: 999px;
 }
-.choose a:hover { border-color: var(--green); }
-.choose a[aria-current="true"] { border-color: var(--green); color: var(--green); font-weight: 600; }
+.choose button:hover { border-color: var(--green); }
+.choose button[aria-pressed="true"] { border-color: var(--green); color: var(--green); font-weight: 600; }
 .mobile-note {
   background: var(--gold-soft); border-radius: 12px; padding: 14px 16px; margin: 0 0 18px; font-size: 15px;
 }
@@ -129,11 +129,26 @@ html[lang="en"] h1 { font-family: var(--body); letter-spacing: -0.015em; line-he
   @keyframes land { 0%, 12% { opacity: .25; transform: translateX(10px); } 24%, 100% { opacity: 1; transform: none; } }
 }
 
-/* the app screenshot */
+/* the app screenshots, one per tab of the app */
+.gtabs { display: flex; flex-wrap: wrap; gap: 6px; margin: 0 0 14px; }
+.gtab {
+  font: inherit; font-size: 14px; color: var(--ink); border: 1px solid var(--line); cursor: pointer;
+  background: var(--surface); padding: 7px 14px; border-radius: 999px;
+}
+.gtab:hover { border-color: var(--green); }
+.gtab[aria-selected="true"] { background: var(--green); color: var(--green-ink); border-color: var(--green); }
 .shot { margin: 0; border: 1px solid var(--line); border-radius: 14px; overflow: hidden; background: var(--surface);
   box-shadow: 0 24px 48px -30px rgba(18, 38, 28, .45); }
-.shot img { display: block; width: 100%; height: auto; }
-.shot figcaption { padding: 10px 16px; color: var(--muted); font-size: 14px; border-top: 1px solid var(--line); }
+.shot a { display: block; aspect-ratio: 980 / 700; background: #f4f5f7; cursor: zoom-in; }
+.shot img { display: block; width: 100%; height: 100%; object-fit: contain; }
+.shot figcaption { padding: 12px 16px; color: var(--muted); font-size: 15px; border-top: 1px solid var(--line); min-height: 3.2em; }
+.shot-nav { display: flex; justify-content: space-between; align-items: center; gap: 8px; margin-top: 10px; color: var(--muted); font-size: 14px; }
+.shot-nav button {
+  font: inherit; font-size: 14px; color: var(--ink); border: 1px solid var(--line); cursor: pointer;
+  background: var(--surface); padding: 6px 14px; border-radius: 999px;
+}
+.shot-nav button:hover { border-color: var(--green); }
+[dir="rtl"] .shot-nav .arrow { display: inline-block; transform: scaleX(-1); }
 
 /* sections */
 section { padding-block: 44px; border-top: 1px solid var(--line); }
@@ -217,9 +232,9 @@ footer .wrap { padding-block: 28px 40px; display: flex; flex-wrap: wrap; justify
       <p class="dl-meta"><span id="dlVersion"></span><code id="dlFile">KFUPM-Sorter-Windows-Setup.exe</code></p>
 
       <div class="choose" id="choose" aria-label="Other systems">
-        <a href="#" data-os="win">Windows 10 / 11</a>
-        <a href="#" data-os="mac-arm" data-i18n="macArm">Mac (M1 أو أحدث)</a>
-        <a href="#" data-os="mac-intel" data-i18n="macIntel">Mac (Intel)</a>
+        <button type="button" data-os="win">Windows 10 / 11</button>
+        <button type="button" data-os="mac-arm" data-i18n="macArm">Mac (M1 أو أحدث)</button>
+        <button type="button" data-os="mac-intel" data-i18n="macIntel">Mac (Intel)</button>
       </div>
     </div>
 
@@ -246,12 +261,25 @@ footer .wrap { padding-block: 28px 40px; display: flex; flex-wrap: wrap; justify
   <section id="screenshot">
     <div class="wrap">
       <h2 data-i18n="shotH">هكذا يبدو البرنامج</h2>
-      <p class="sub" data-i18n="shotSub">اختر مقرراتك من دليل الجامعة الرسمي، ثم اضغط <b>حفظ</b>. هذا كل ما في الأمر.</p>
+      <p class="sub" data-i18n="shotSub">جولة في شاشات البرنامج. اضغط على الصورة لعرضها بحجمها الكامل.</p>
+      <div class="gtabs" role="tablist" aria-label="App screens">
+        <button class="gtab" role="tab" type="button" data-shot="courses" data-i18n="gCourses">مقرراتي</button>
+        <button class="gtab" role="tab" type="button" data-shot="filters" data-i18n="gFilters">فلاتر مخصصة</button>
+        <button class="gtab" role="tab" type="button" data-shot="sorting" data-i18n="gSorting">الفرز</button>
+        <button class="gtab" role="tab" type="button" data-shot="status" data-i18n="gStatus">الحالة</button>
+        <button class="gtab" role="tab" type="button" data-shot="about" data-i18n="gAbout">حول البرنامج</button>
+      </div>
       <figure class="shot">
-        <img id="shotImg" src="screen-en.jpg" width="1286" height="920" loading="lazy" decoding="async"
-             alt="KFUPM Sorter on Windows: picking this term's courses from the KFUPM catalog">
-        <figcaption data-i18n="shotCap">KFUPM Sorter على Windows، وتبدو النسخة على Mac بالشكل نفسه.</figcaption>
+        <a id="shotLink" href="shots/en-courses.png" target="_blank" rel="noopener">
+          <img id="shotImg" src="shots/en-courses.png" width="980" height="700" decoding="async" alt="">
+        </a>
+        <figcaption id="shotCap"></figcaption>
       </figure>
+      <div class="shot-nav">
+        <button type="button" id="shotPrev"><span class="arrow">←</span> <span data-i18n="gPrev">السابق</span></button>
+        <span id="shotCount" dir="ltr">1 / 5</span>
+        <button type="button" id="shotNext"><span data-i18n="gNext">التالي</span> <span class="arrow">→</span></button>
+      </div>
     </div>
   </section>
 
@@ -350,8 +378,9 @@ footer .wrap { padding-block: 28px 40px; display: flex; flex-wrap: wrap; justify
       m3: "Open the app and choose <b>Allow</b> when it asks to use your Downloads folder.",
       m4: "Not sure which Mac you have? Apple menu → <b>About This Mac</b>. “Chip: Apple M…” means M1 or newer; “Processor: Intel” means Intel.",
       shotH: "What it looks like",
-      shotSub: "Pick your courses from the official KFUPM catalog, then press <b>Save</b>. That’s it.",
-      shotCap: "KFUPM Sorter on Windows. The Mac version looks the same.",
+      shotSub: "A tour of every screen. Click a picture to see it full size.",
+      gCourses: "My Courses", gFilters: "Custom Filters", gSorting: "Sorting", gStatus: "Status", gAbout: "About",
+      gPrev: "Previous", gNext: "Next",
       featH: "What it does", featSub: "2,123 courses from 58 departments, from the official KFUPM bulletin.",
       f1h: "Finds the course however it’s written", f1p: "COE 301 catches COE301_Lab.pdf and Coe-301 HW.docx, but not COE 3011.",
       f2h: "Your own filters", f2p: "A folder for your internship, a club or a side project, matched by keywords you choose.",
@@ -363,6 +392,29 @@ footer .wrap { padding-block: 28px 40px; display: flex; flex-wrap: wrap; justify
       source: "Source code on GitHub"
     }
   };
+
+  var SHOTS = ["courses", "filters", "sorting", "status", "about"];
+  var CAPS = {
+    ar: {
+      courses: "اختر قسمك وابحث عن مقرراتك في دليل الجامعة الرسمي، ثم أضفها إلى مقررات هذا الفصل.",
+      filters: "أنشئ مجلدًا خاصًا للتدريب أو لنادٍ أو لمشروع، وحدّد الكلمات التي تنقل الملف إليه.",
+      sorting: "اختر المجلد الذي يُرتَّب، وكيف تُرتَّب الملفات التي لا تتبع أي مقرر حسب نوعها.",
+      status: "شغّل الترتيب التلقائي، وراجع آخر الملفات التي نُقلت وإلى أين.",
+      about: "تحديث دليل المقررات، والتنبيه عند صدور إصدار جديد، ودعم المشروع."
+    },
+    en: {
+      courses: "Pick your department, search the official KFUPM catalog and add this term’s courses.",
+      filters: "Make a folder for your internship, a club or a project, and choose the keywords that send files there.",
+      sorting: "Choose the folder to keep sorted and how files that match no course are sorted by type.",
+      status: "Turn on automatic sorting and see the latest files that were moved, and where to.",
+      about: "Update the course catalog, get a notice when a new version is out, and support the project."
+    }
+  };
+  var ALT = {
+    ar: { courses: "تبويب مقرراتي", filters: "تبويب الفلاتر المخصصة", sorting: "تبويب الفرز", status: "تبويب الحالة", about: "تبويب حول البرنامج" },
+    en: { courses: "My Courses tab", filters: "Custom Filters tab", sorting: "Sorting tab", status: "Status tab", about: "About tab" }
+  };
+  var shot = 0;
 
   var store = {
     get: function (k) { try { return localStorage.getItem(k); } catch (e) { return null; } },
@@ -382,9 +434,8 @@ footer .wrap { padding-block: 28px 40px; display: flex; flex-wrap: wrap; justify
     a.href = BASE + FILES[which];
     document.getElementById("dlLabel").textContent = T[lang].label[which];
     document.getElementById("dlFile").textContent = FILES[which];
-    document.querySelectorAll("#choose a").forEach(function (c) {
-      c.setAttribute("aria-current", c.dataset.os === which ? "true" : "false");
-      c.href = BASE + FILES[c.dataset.os];
+    document.querySelectorAll("#choose button").forEach(function (c) {
+      c.setAttribute("aria-pressed", c.dataset.os === which ? "true" : "false");
     });
     showTab(which === "win" ? "win" : "mac");
   }
@@ -393,6 +444,23 @@ footer .wrap { padding-block: 28px 40px; display: flex; flex-wrap: wrap; justify
     document.getElementById("steps-win").hidden = t !== "win";
     document.getElementById("steps-mac").hidden = t !== "mac";
     document.querySelectorAll(".tab").forEach(function (b) { b.setAttribute("aria-selected", b.dataset.tab === t ? "true" : "false"); });
+  }
+
+  function showShot(i) {
+    shot = (i + SHOTS.length) % SHOTS.length;
+    var name = SHOTS[shot], file = "shots/" + lang + "-" + name + ".png";
+    var img = document.getElementById("shotImg");
+    if (img.getAttribute("src") !== file) img.src = file;
+    img.alt = "KFUPM Sorter, " + ALT[lang][name];
+    document.getElementById("shotLink").href = file;
+    document.getElementById("shotCap").textContent = CAPS[lang][name];
+    document.getElementById("shotCount").textContent = (shot + 1) + " / " + SHOTS.length;
+    document.querySelectorAll(".gtab").forEach(function (b) { b.setAttribute("aria-selected", b.dataset.shot === name ? "true" : "false"); });
+  }
+
+  // load the other screens once the page is idle, so switching tabs is instant
+  function preloadShots() {
+    SHOTS.forEach(function (n) { var im = new Image(); im.src = "shots/" + lang + "-" + n + ".png"; });
   }
 
   function applyLang(l) {
@@ -405,10 +473,7 @@ footer .wrap { padding-block: 28px 40px; display: flex; flex-wrap: wrap; justify
       else if (typeof T.en[k] === "string") el.innerHTML = T.en[k];
     });
     document.getElementById("lang").textContent = T[l].langBtn;
-    var shot = document.getElementById("shotImg");
-    shot.src = l === "ar" ? "screen-ar.jpg" : "screen-en.jpg";
-    shot.alt = l === "ar" ? "برنامج KFUPM Sorter على Windows: اختيار مقررات الفصل من دليل الجامعة"
-                          : "KFUPM Sorter on Windows: picking this term’s courses from the KFUPM catalog";
+    showShot(shot);
     document.getElementById("dlVersion").textContent = version ? T[l].version(version) : "";
     setDownload(os);
     store.set("lang", l);
@@ -450,11 +515,17 @@ footer .wrap { padding-block: 28px 40px; display: flex; flex-wrap: wrap; justify
     } else fallback();
   }
 
-  document.getElementById("lang").addEventListener("click", function () { applyLang(lang === "ar" ? "en" : "ar"); });
+  document.getElementById("lang").addEventListener("click", function () { applyLang(lang === "ar" ? "en" : "ar"); preloadShots(); });
   document.querySelectorAll(".tab").forEach(function (b) { b.addEventListener("click", function () { showTab(b.dataset.tab); }); });
-  document.querySelectorAll("#choose a").forEach(function (a) {
-    a.addEventListener("click", function () { setDownload(a.dataset.os); });
+  // choosing a system only changes the download button and the install steps; nothing downloads until that button is pressed
+  document.querySelectorAll("#choose button").forEach(function (b) {
+    b.addEventListener("click", function () { setDownload(b.dataset.os); });
   });
+  document.querySelectorAll(".gtab").forEach(function (b) {
+    b.addEventListener("click", function () { showShot(SHOTS.indexOf(b.dataset.shot)); });
+  });
+  document.getElementById("shotPrev").addEventListener("click", function () { showShot(shot - 1); });
+  document.getElementById("shotNext").addEventListener("click", function () { showShot(shot + 1); });
   document.getElementById("copyCmd").addEventListener("click", function (e) {
     copy(e.currentTarget, document.getElementById("cmdText").textContent, T[lang].copied, function () { return T[lang].copy; });
   });
@@ -464,6 +535,7 @@ footer .wrap { padding-block: 28px 40px; display: flex; flex-wrap: wrap; justify
 
   detect();
   applyLang(lang);
+  window.addEventListener("load", function () { setTimeout(preloadShots, 500); });
 
   // Show the current version number; the download links themselves always point at the latest release.
   fetch("https://api.github.com/repos/kal429/kfupm-sorter-windows-mac/releases/latest")

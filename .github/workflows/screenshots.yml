@@ -1,0 +1,74 @@
+# Takes the screenshots for the website (site/shots) and its link preview (site/og-image.png).
+# Opens the real app on Windows with sample courses, paints every tab at twice the size,
+# then commits the pictures to stable and main (Vercel publishes main).
+# Run it from the Actions tab (Run workflow) after changing the app's look.
+name: Screenshots
+
+on:
+  workflow_dispatch:
+  push:
+    branches: [stable]
+    paths: ['tools/screenshots/**', '.github/workflows/screenshots.yml']
+
+permissions:
+  contents: write
+
+concurrency:
+  group: screenshots
+  cancel-in-progress: true
+
+jobs:
+  shots:
+    runs-on: windows-latest
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          ref: stable
+          fetch-depth: 0
+      - uses: actions/setup-java@v4
+        with:
+          distribution: temurin
+          java-version: '21'
+      - name: Compile the app and the screenshot tool
+        shell: pwsh
+        run: |
+          New-Item -ItemType Directory -Force build/classes, build/shots | Out-Null
+          $src = Get-ChildItem -Recurse src/main/java -Filter *.java | ForEach-Object { $_.FullName }
+          javac -encoding UTF-8 -d build/classes @src
+          if ($LASTEXITCODE) { exit 1 }
+          Copy-Item -Recurse src/main/resources/* build/classes/
+          javac -encoding UTF-8 -cp build/classes -d build/shots tools/screenshots/Shots.java
+          if ($LASTEXITCODE) { exit 1 }
+      - name: Take the screenshots (English, then Arabic)
+        shell: pwsh
+        run: |
+          # a believable settings folder, since the Status tab shows where settings are stored
+          $data = 'C:\Users\Student\AppData\Roaming\KFUPM Sorter'
+          foreach ($lang in 'en', 'ar') {
+            if (Test-Path $data) { Remove-Item -Recurse -Force $data }
+            New-Item -ItemType Directory -Force $data | Out-Null
+            java -Dsun.java2d.uiScale=2 -Duser.timezone=Asia/Riyadh "-Dkfupmsorter.data=$data" -cp "build/classes;build/shots" Shots $lang site/shots
+            if ($LASTEXITCODE) { exit 1 }
+          }
+          Get-ChildItem site/shots, site/og-image.png | Format-Table Name, Length
+      - uses: actions/upload-artifact@v4
+        with:
+          name: screenshots
+          path: |
+            site/shots
+            site/og-image.png
+      - name: Commit the pictures to stable and main
+        shell: pwsh
+        run: |
+          git config user.name 'kal429'
+          git config user.email '122479055+kal429@users.noreply.github.com'
+          git add site/shots site/og-image.png
+          git diff --cached --quiet
+          if ($LASTEXITCODE -eq 0) { Write-Host 'The pictures did not change.'; exit 0 }
+          git commit -m 'Website: new app screenshots'
+          git push origin HEAD:stable
+          if ($LASTEXITCODE) { exit 1 }
+          # main is what Vercel publishes; it normally just follows stable
+          git push origin HEAD:main
+          if ($LASTEXITCODE) { Write-Host '::warning::main has commits that stable does not, so it was not updated.' }
+          exit 0

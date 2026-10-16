@@ -12,6 +12,8 @@
   <a href="#بالعربية">العربية</a>
 </p>
 
+<p align="center"><a href="https://kfupm-sorter-windows-mac.vercel.app"><b>kfupm-sorter-windows-mac.vercel.app</b></a>: the download page, with install steps for Windows and Mac</p>
+
 > [!IMPORTANT]
 > **Mac users: run one command after installing, or the app will not open.**
 > macOS shows *"KFUPM Sorter Desktop" Not Opened* because the app is free and not notarized by Apple.
@@ -149,6 +151,8 @@ On Windows, double-click `Build Windows installer.bat` (uses an installed JDK 21
 - **أنواع ملفات خاصة بك**: عدّل امتدادات أي مجلد أو أضف نوعًا جديدًا بالكتابة، مثل مجلد `Assembly` للامتدادات `.asm, .s, .inc`.
 - **يحترم ما تنقله بنفسك**: إذا أعدت ملفًا مرتبًا إلى مجلد التنزيلات يبقى فيه، وتُرتَّب التنزيلات الجديدة كالمعتاد.
 - **تنبيه بالإصدارات الجديدة**: عند صدور إصدار جديد يظهر شريط أعلى النافذة، وزر **تحديث** يفتح ملف التنزيل المناسب لجهازك. ويمكن إيقافه من تبويب «حول البرنامج».
+
+**الموقع:** [kfupm-sorter-windows-mac.vercel.app](https://kfupm-sorter-windows-mac.vercel.app)، وفيه التنزيل وخطوات التثبيت على Windows وMac.
 
 **التنزيل:** من [أحدث إصدار](https://github.com/kal429/kfupm-sorter-windows-mac/releases/latest):
 `KFUPM-Sorter-macOS-AppleSilicon.dmg` لأجهزة Mac بمعالج M1 أو أحدث، و`KFUPM-Sorter-macOS-Intel.dmg` لأجهزة Mac بمعالج Intel، و`KFUPM-Sorter-Windows-Setup.exe` لنظام Windows.

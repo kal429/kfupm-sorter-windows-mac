@@ -1,14 +1,22 @@
 <!doctype html>
-<html lang="ar" dir="rtl">
+<html lang="en" dir="ltr">
 <head>
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
 <title>KFUPM Sorter</title>
 <meta name="claude:viewport-fit-sides" content="cover">
-<meta name="description" content="رتّب مجلد التنزيلات حسب مقررات KFUPM تلقائيًا. مجاني لـ Windows وMac.">
+<meta name="description" content="Keeps your Downloads folder sorted by KFUPM course, automatically. Free for Windows and Mac, in English and Arabic.">
 <meta property="og:title" content="KFUPM Sorter">
 <meta property="og:description" content="Keeps your Downloads folder sorted by KFUPM course, automatically. Free for Windows and Mac.">
-<meta property="og:image" content="icon.png">
+<meta property="og:type" content="website">
+<meta property="og:url" content="https://kfupm-sorter-windows-mac.vercel.app/">
+<meta property="og:image" content="https://kfupm-sorter-windows-mac.vercel.app/og-image.png">
+<meta property="og:image:width" content="1200">
+<meta property="og:image:height" content="630">
+<meta property="og:image:alt" content="KFUPM Sorter: sorts your Downloads by KFUPM course">
+<meta name="twitter:card" content="summary_large_image">
+<meta name="twitter:image" content="https://kfupm-sorter-windows-mac.vercel.app/og-image.png">
+<link rel="canonical" href="https://kfupm-sorter-windows-mac.vercel.app/">
 <link rel="icon" href="icon.png">
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
@@ -121,6 +129,12 @@ html[lang="en"] h1 { font-family: var(--body); letter-spacing: -0.015em; line-he
   @keyframes land { 0%, 12% { opacity: .25; transform: translateX(10px); } 24%, 100% { opacity: 1; transform: none; } }
 }
 
+/* the app screenshot */
+.shot { margin: 0; border: 1px solid var(--line); border-radius: 14px; overflow: hidden; background: var(--surface);
+  box-shadow: 0 24px 48px -30px rgba(18, 38, 28, .45); }
+.shot img { display: block; width: 100%; height: auto; }
+.shot figcaption { padding: 10px 16px; color: var(--muted); font-size: 14px; border-top: 1px solid var(--line); }
+
 /* sections */
 section { padding-block: 44px; border-top: 1px solid var(--line); }
 h2 { font-family: var(--display); font-size: clamp(24px, 3.4vw, 30px); margin: 0 0 8px; text-wrap: balance; }
@@ -229,6 +243,18 @@ footer .wrap { padding-block: 28px 40px; display: flex; flex-wrap: wrap; justify
     </div>
   </div>
 
+  <section id="screenshot">
+    <div class="wrap">
+      <h2 data-i18n="shotH">هكذا يبدو البرنامج</h2>
+      <p class="sub" data-i18n="shotSub">اختر مقرراتك من دليل الجامعة الرسمي، ثم اضغط <b>حفظ</b>. هذا كل ما في الأمر.</p>
+      <figure class="shot">
+        <img id="shotImg" src="screen-en.jpg" width="1286" height="920" loading="lazy" decoding="async"
+             alt="KFUPM Sorter on Windows: picking this term's courses from the KFUPM catalog">
+        <figcaption data-i18n="shotCap">KFUPM Sorter على Windows، وتبدو النسخة على Mac بالشكل نفسه.</figcaption>
+      </figure>
+    </div>
+  </section>
+
   <section id="install">
     <div class="wrap">
       <h2 data-i18n="installH">التثبيت</h2>
@@ -323,6 +349,9 @@ footer .wrap { padding-block: 28px 40px; display: flex; flex-wrap: wrap; justify
       m2note: "Without it, macOS says the app can’t be opened, because it isn’t notarized by Apple. The command only removes the “downloaded from the internet” mark from this one app. Run it again after each update.",
       m3: "Open the app and choose <b>Allow</b> when it asks to use your Downloads folder.",
       m4: "Not sure which Mac you have? Apple menu → <b>About This Mac</b>. “Chip: Apple M…” means M1 or newer; “Processor: Intel” means Intel.",
+      shotH: "What it looks like",
+      shotSub: "Pick your courses from the official KFUPM catalog, then press <b>Save</b>. That’s it.",
+      shotCap: "KFUPM Sorter on Windows. The Mac version looks the same.",
       featH: "What it does", featSub: "2,123 courses from 58 departments, from the official KFUPM bulletin.",
       f1h: "Finds the course however it’s written", f1p: "COE 301 catches COE301_Lab.pdf and Coe-301 HW.docx, but not COE 3011.",
       f2h: "Your own filters", f2p: "A folder for your internship, a club or a side project, matched by keywords you choose.",
@@ -343,7 +372,7 @@ footer .wrap { padding-block: 28px 40px; display: flex; flex-wrap: wrap; justify
   var arOriginal = {};
   document.querySelectorAll("[data-i18n]").forEach(function (el) { arOriginal[el.dataset.i18n] = el.innerHTML; });
 
-  var lang = store.get("lang") === "en" ? "en" : "ar";
+  var lang = store.get("lang") === "ar" ? "ar" : "en";   // English by default
   var os = "win";
   var version = "";
 
@@ -376,6 +405,10 @@ footer .wrap { padding-block: 28px 40px; display: flex; flex-wrap: wrap; justify
       else if (typeof T.en[k] === "string") el.innerHTML = T.en[k];
     });
     document.getElementById("lang").textContent = T[l].langBtn;
+    var shot = document.getElementById("shotImg");
+    shot.src = l === "ar" ? "screen-ar.jpg" : "screen-en.jpg";
+    shot.alt = l === "ar" ? "برنامج KFUPM Sorter على Windows: اختيار مقررات الفصل من دليل الجامعة"
+                          : "KFUPM Sorter on Windows: picking this term’s courses from the KFUPM catalog";
     document.getElementById("dlVersion").textContent = version ? T[l].version(version) : "";
     setDownload(os);
     store.set("lang", l);

@@ -7,7 +7,7 @@ name: Build
 on:
   push:
     branches: [stable, main]
-    paths-ignore: ['**.md', 'docs/**', 'LICENSE']
+    paths-ignore: ['**.md', 'docs/**', 'site/**', 'LICENSE']
   workflow_dispatch:
   workflow_call:
 

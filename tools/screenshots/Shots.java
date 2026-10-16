@@ -48,6 +48,9 @@ public final class Shots {
         MainWindow[] w = new MainWindow[1];
         SwingUtilities.invokeAndWait(() -> {
             w[0] = new MainWindow();
+            // no title bar: Windows keeps a normal window within the screen, which on a CI machine
+            // (1024x768 at twice the size) would squeeze the app; a borderless one may be larger
+            w[0].setUndecorated(true);
             w[0].setSize(W, H);
             w[0].setLocation(10, 10);
             w[0].setVisible(true);
@@ -74,6 +77,10 @@ public final class Shots {
             if (i >= 0) depts.ensureIndexIsVisible(Math.min(depts.getModel().getSize() - 1, i + 6));
         });
         Thread.sleep(300);
+
+        JComponent rootPane = w[0].getRootPane();
+        if (rootPane.getWidth() != W || rootPane.getHeight() != H)
+            throw new IllegalStateException("the window is " + rootPane.getWidth() + "x" + rootPane.getHeight() + ", not " + W + "x" + H);
 
         JTabbedPane tabs = (JTabbedPane) field(w[0], "tabs");
         BufferedImage first = null;

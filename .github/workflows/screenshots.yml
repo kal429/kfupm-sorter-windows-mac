@@ -39,6 +39,13 @@ jobs:
           Copy-Item -Recurse src/main/resources/* build/classes/
           javac -encoding UTF-8 -cp build/classes -d build/shots tools/screenshots/Shots.java
           if ($LASTEXITCODE) { exit 1 }
+      - name: Make the screen larger, if this machine allows it
+        shell: pwsh
+        continue-on-error: true
+        run: |
+          try { Set-DisplayResolution -Width 1920 -Height 1080 -Force } catch { Write-Host "Kept the screen size: $_" }
+          Add-Type -AssemblyName System.Windows.Forms
+          Write-Host "Screen: $([System.Windows.Forms.Screen]::PrimaryScreen.Bounds)"
       - name: Take the screenshots (English, then Arabic)
         shell: pwsh
         run: |
